@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستم امتیازدهی | نمایش امتیازات</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- ============ هدر ============ -->
+        <header class="header">
+            <div class="header-right">
+                <div class="logo-circle">★</div>
+                <div>
+                    <h1>سیستم امتیازدهی</h1>
+                    <p class="header-sub">مدیریت و نمایش امتیاز دانش‌آموزان</p>
+                </div>
+            </div>
+            <div class="header-left">
+                <button class="btn btn-icon" id="themeToggle" title="تغییر تم">🌙</button>
+                <a href="login.html" class="btn btn-primary">👑 ورود ادمین</a>
+            </div>
+        </header>
+
+        <!-- ============ سرچ باکس ============ -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 اسم دانش‌آموز رو تایپ کن...">
+        </div>
+
+        <!-- ============ نتیجه سرچ ============ -->
+        <div id="searchResults" style="display:none;">
+            <h3 class="section-title">🔍 نتایج جستجو</h3>
+            <div id="searchResultsList" class="students-list"></div>
+        </div>
+
+        <!-- ============ برترین‌ها ============ -->
+        <div id="topSection">
+            <h3 class="section-title">🏆 برترین‌ها</h3>
+            <div id="leaderboard" class="leaderboard"></div>
+        </div>
+
+        <!-- ============ گروه‌ها ============ -->
+        <h3 class="section-title" style="margin-top:32px;">📁 گروه‌ها</h3>
+        <div id="groupsGrid" class="groups-grid"></div>
+
+    </div>
+
+    <!-- ============ مودال پروفایل ============ -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">پروفایل دانش‌آموز</h3>
+                <button class="modal-close" onclick="closeProfile()">×</button>
+            </div>
+            <div id="profileContent"></div>
+        </div>
+    </div>
+
+    <!-- ============ مودال لیست گروه ============ -->
+    <div class="modal-overlay" id="groupModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="groupModalTitle">گروه</h3>
+                <button class="modal-close" onclick="closeGroup()">×</button>
+            </div>
+            <div id="groupContent"></div>
+        </div>
+    </div>
+
+    <script src="supabase.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
