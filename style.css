@@ -1159,3 +1159,366 @@ a {
     color: var(--gray);
     font-size: 14px;
 }
+
+
+
+
+
+
+/* ============================================
+   🧠 کارت‌های هوشمند (Smart Analysis)
+   ============================================ */
+
+.smart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.smart-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+body.light-mode .smart-card {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.smart-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(6, 182, 212, 0.5);
+  box-shadow: var(--shadow-hover);
+}
+
+.smart-card.warning {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.smart-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.smart-card-icon {
+  font-size: 22px;
+}
+
+.smart-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray);
+  flex: 1;
+}
+
+.smart-badge {
+  background: var(--danger);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.smart-card-body {
+  font-size: 13px;
+}
+
+.smart-stat-big {
+  font-size: 32px;
+  font-weight: 800;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.smart-stat-label {
+  font-size: 12px;
+  color: var(--gray);
+  margin-bottom: 8px;
+}
+
+.smart-stat-divider {
+  height: 1px;
+  background: rgba(6, 182, 212, 0.2);
+  margin: 12px 0;
+}
+
+.smart-stat-small {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--light);
+}
+
+.smart-stat-change {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.smart-stat-change.positive {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald);
+}
+
+.smart-stat-change.negative {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+}
+
+/* ============================================
+   Streak Item
+   ============================================ */
+.streak-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(6, 182, 212, 0.1);
+}
+
+.streak-item:last-child {
+  border-bottom: none;
+}
+
+.streak-rank {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.streak-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.streak-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--warning);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Alert Item
+   ============================================ */
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.alert-item.warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 3px solid var(--warning);
+}
+
+.alert-item.info {
+  background: rgba(6, 182, 212, 0.1);
+  border-left: 3px solid var(--cyan);
+}
+
+.alert-item.danger {
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid var(--danger);
+}
+
+.smart-more {
+  text-align: center;
+  font-size: 11px;
+  color: var(--gray);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* ============================================
+   Suggestion Item
+   ============================================ */
+.suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.08);
+  border-left: 3px solid var(--emerald);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ============================================
+   ⌨️ کامند پالت (Ctrl+K)
+   ============================================ */
+.cmd-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 9999;
+  padding: 80px 20px 20px;
+}
+
+.cmd-palette-overlay.active {
+  display: flex;
+  animation: fadeIn 0.2s;
+}
+
+.cmd-palette {
+  width: 100%;
+  max-width: 560px;
+  background: var(--dark-2);
+  border-radius: 16px;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: slideUp 0.3s;
+}
+
+.cmd-palette-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.cmd-palette-input-wrap input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--light);
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.cmd-palette-input-wrap input::placeholder {
+  color: var(--gray);
+}
+
+.cmd-hint {
+  font-size: 11px;
+  color: var(--gray);
+  padding: 4px 8px;
+  background: rgba(6, 182, 212, 0.1);
+  border-radius: 6px;
+}
+
+.cmd-results {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.cmd-section-title {
+  font-size: 11px;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 12px 12px 8px;
+  font-weight: 700;
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cmd-item:hover {
+  background: rgba(6, 182, 212, 0.15);
+}
+
+.cmd-item-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.cmd-item-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--light);
+}
+
+.cmd-item-sub {
+  font-size: 11px;
+  color: var(--gray);
+  margin-top: 2px;
+}
+
+/* ============================================
+   درگ و دراپ Import
+   ============================================ */
+#dropZone {
+  user-select: none;
+}
+
+#dropZone:hover {
+  border-color: var(--cyan) !important;
+  background: rgba(6, 182, 212, 0.1) !important;
+}
+
+/* ============================================
+   ریسپانسیو برای کارت‌های هوشمند
+   ============================================ */
+@media (max-width: 640px) {
+  .smart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .smart-stat-big {
+    font-size: 26px;
+  }
+
+  .cmd-palette-overlay {
+    padding: 40px 12px 12px;
+  }
+
+  .cmd-palette {
+    max-width: 100%;
+  }
+
+  .cmd-hint {
+    display: none;
+  }
+   }
