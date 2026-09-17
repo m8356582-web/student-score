@@ -1,5 +1,5 @@
 /* ============================================
-   منطق پنل ادمین (admin.html) - نسخه امنیتی
+   منطق پنل ادمین (admin.html) - نسخه امنیتی + هوشمند
    ============================================ */
 
 let currentAdmin = null;
@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   currentAdmin = requireAdmin();
   if (!currentAdmin) return;
 
-  // چک اعتبار توکن با سرور
   const valid = await Auth.verify();
   if (!valid) {
     Auth.clear();
@@ -33,6 +32,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadAll();
   renderStats();
   renderRecentScores();
+
+  // 🧠 تحلیل هوشمند
+  if (typeof renderSmartAnalysis === 'function') {
+    setTimeout(() => renderSmartAnalysis(), 300);
+  }
 });
 
 /* ============================================
@@ -40,7 +44,6 @@ document.addEventListener('DOMContentLoaded', async () => {
    ============================================ */
 function initHeader() {
   document.getElementById('adminName').textContent = currentAdmin.full_name;
-
   const roleBadge = document.getElementById('roleBadge');
   if (currentAdmin.role === 'super') {
     roleBadge.textContent = '👑 سوپر ادمین';
@@ -50,7 +53,6 @@ function initHeader() {
     roleBadge.className = 'role-badge admin';
     document.getElementById('adminsTab').style.display = 'none';
   }
-
   document.getElementById('logoutBtn').addEventListener('click', () => {
     if (confirm('از پنل خارج می‌شی؟')) {
       Auth.clear();
@@ -103,6 +105,11 @@ async function onTabOpen(tabName) {
   else if (tabName === 'dashboard') {
     renderStats();
     renderRecentScores();
+    if (typeof renderSmartAnalysis === 'function') renderSmartAnalysis();
+  }
+  else if (tabName === 'import') {
+    // ناحیه Import از import.js مدیریت می‌شه
+    if (typeof initImportZone === 'function') initImportZone();
   }
 }
 
@@ -359,7 +366,6 @@ async function manageGroupMembers(groupId, groupName) {
 function toggleMember(studentId) {
   const el = document.querySelector(`.member-item[data-id="${studentId}"]`);
   if (!el) return;
-
   if (selectedMembers.has(studentId)) {
     selectedMembers.delete(studentId);
     el.classList.remove('selected');
@@ -389,11 +395,9 @@ function updateMemberCounter() {
 
 async function saveGroupMembers() {
   if (!currentGroupForMembers) return;
-
   try {
     const currentMembers = await Groups.getStudents(currentGroupForMembers);
     const currentIds = currentMembers.map(s => s.id);
-
     const toAdd = [...selectedMembers].filter(id => !currentIds.includes(id));
     const toRemove = currentIds.filter(id => !selectedMembers.has(id));
 
@@ -657,10 +661,7 @@ async function submitAttendance() {
   }));
 
   try {
-    // ۱. ثبت امتیازها
     await Scores.addBulk(entries, 'attendance');
-
-    // ۲. ساخت جلسه و ثبت حضور
     const sessionResult = await Sessions.create(sessionTitle, new Date().toISOString().split('T')[0], groupId, reason);
     if (sessionResult.success) {
       await AttendanceRecords.addBulk(sessionResult.id, Array.from(selectedAttendance));
@@ -674,6 +675,7 @@ async function submitAttendance() {
     await loadAll();
     await renderAttendance();
     renderStats();
+    if (typeof renderSmartAnalysis === 'function') renderSmartAnalysis();
   } catch (err) {
     console.error(err);
     showToast('خطا: ' + err.message, 'error');
@@ -751,7 +753,6 @@ function selectManualStudent(student) {
 
 async function submitManualScore() {
   if (!manualSelectedStudent) { showToast('اول یه دانش‌آموز انتخاب کن', 'warning'); return; }
-
   const amount = Number(document.getElementById('manualAmount').value);
   if (!amount) { showToast('مقدار امتیاز رو وارد کن', 'warning'); return; }
 
@@ -772,6 +773,7 @@ async function submitManualScore() {
     await loadAll();
     renderStats();
     renderRecentScores();
+    if (typeof renderSmartAnalysis === 'function') renderSmartAnalysis();
   } catch (err) {
     console.error(err);
     showToast('خطا: ' + err.message, 'error');
@@ -1103,7 +1105,7 @@ async function deleteAdmin(id, name) {
 }
 
 /* ============================================
-   Audit Log (گزارش فعالیت‌ها) 🆕
+   Audit Log
    ============================================ */
 async function renderAuditLog() {
   const container = document.getElementById('auditList');
@@ -1118,21 +1120,12 @@ async function renderAuditLog() {
     }
 
     const actionIcons = {
-      'login': '🔓',
-      'add_score': '⭐',
-      'bulk_score': '✅',
-      'create_student': '👤',
-      'create_group': '📁',
-      'create_admin': '🔑',
-      'create_session': '📚',
-      'update_student': '✏️',
-      'update_group': '✏️',
-      'update_session': '✏️',
-      'update_password': '🔒',
-      'add_to_group': '➕',
-      'remove_from_group': '➖',
-      'set_groups': '🔀',
-      'delete': '🗑️'
+      'login': '🔓', 'add_score': '⭐', 'bulk_score': '✅',
+      'create_student': '👤', 'create_group': '📁', 'create_admin': '🔑',
+      'create_session': '📚', 'update_student': '✏️', 'update_group': '✏️',
+      'update_session': '✏️', 'update_password': '🔒', 'add_to_group': '➕',
+      'remove_from_group': '➖', 'set_groups': '🔀', 'delete': '🗑️',
+      'bulk_import': '📥'
     };
 
     container.innerHTML = logs.map(log => {
@@ -1154,4 +1147,4 @@ async function renderAuditLog() {
     console.error(err);
     container.innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
   }
-        }
+                                          }
