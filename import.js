@@ -1,375 +1,531 @@
-﻿<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پنل مدیریت | سیستم امتیازدهی</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 24px;
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(20px);
-            border-radius: var(--radius);
-            border: 1px solid rgba(6, 182, 212, 0.2);
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-            flex-wrap: wrap;
-            gap: 12px;
+/* ============================================
+   📥 Import هوشمند Excel/CSV
+   ============================================ */
+
+let importPreviewData = null;
+let importSelectedGroups = [];
+
+/* ============================================
+   دانلود فایل نمونه CSV
+   ============================================ */
+async function downloadSampleFile() {
+  try {
+    showToast('در حال ساخت فایل نمونه...', 'success');
+
+    // گرفتن گروه‌های موجود
+    const groups = await Groups.getAll();
+    const groupNames = groups.map(g => g.name);
+
+    // اگر گروهی نبود، پیش‌فرض
+    if (groupNames.length === 0) {
+      groupNames.push('گروه نمونه');
+    }
+
+    // ساخت هدر: نام, تلفن, گروه1, گروه2, ...
+    const headers = ['نام', 'تلفن', ...groupNames];
+
+    // سه ردیف خالی برای راهنما
+    const emptyRow = new Array(headers.length).fill('');
+
+    // ساخت CSV با BOM برای پشتیبانی از فارسی در Excel
+    const BOM = '\uFEFF';
+    let csv = BOM + headers.join(',') + '\n';
+    csv += emptyRow.join(',') + '\n';
+    csv += emptyRow.join(',') + '\n';
+    csv += emptyRow.join(',') + '\n';
+
+    // دانلود
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `نمونه-ورودی-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast('✅ فایل نمونه دانلود شد. با Excel بازش کن.', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('خطا در ساخت فایل: ' + err.message, 'error');
+  }
+}
+
+/* ============================================
+   پردازش فایل آپلودی
+   ============================================ */
+async function handleFileUpload(file) {
+  if (!file) return;
+
+  const fileName = file.name.toLowerCase();
+
+  try {
+    showToast('در حال خواندن فایل...', 'success');
+
+    let rows = [];
+
+    if (fileName.endsWith('.csv')) {
+      rows = await parseCSV(file);
+    } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+      rows = await parseXLSX(file);
+    } else {
+      showToast('فقط CSV یا XLSX پشتیبانی می‌شه', 'error');
+      return;
+    }
+
+    if (rows.length < 2) {
+      showToast('فایل خالیه یا فقط هدر داره', 'warning');
+      return;
+    }
+
+    // پردازش هوشمند
+    const processed = await processRows(rows, file.name);
+
+    // نمایش پیش‌نمایش
+    showImportPreview(processed, file.name);
+
+  } catch (err) {
+    console.error(err);
+    showToast('خطا در پردازش فایل: ' + err.message, 'error');
+  }
+}
+
+/* ============================================
+   پارس CSV
+   ============================================ */
+function parseCSV(file) {
+  return new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      header: false,
+      skipEmptyLines: true,
+      complete: (results) => {
+        resolve(results.data);
+      },
+      error: (err) => reject(err)
+    });
+  });
+}
+
+/* ============================================
+   پارس XLSX
+   ============================================ */
+function parseXLSX(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+        resolve(rows.filter(r => r.some(c => String(c).trim() !== '')));
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+/* ============================================
+   پردازش هوشمند ردیف‌ها
+   ============================================ */
+async function processRows(rows, fileName) {
+  // ردیف اول = هدر
+  const header = rows[0].map(h => String(h || '').trim());
+  const dataRows = rows.slice(1);
+
+  // تشخیص ستون‌ها
+  const nameIdx = findColumnIndex(header, ['نام', 'اسم', 'name', 'full_name', 'fullname', 'نام و نام خانوادگی']);
+  const phoneIdx = findColumnIndex(header, ['تلفن', 'موبایل', 'شماره', 'phone', 'mobile', 'tel']);
+
+  if (nameIdx === -1) {
+    throw new Error('ستون «نام» پیدا نشد. مطمئن شو ستون اول یا دومی «نام» یا «اسم» هست.');
+  }
+
+  // ستون‌های گروه = بقیه ستون‌ها (به‌جز نام و تلفن)
+  const groupColumns = [];
+  header.forEach((h, i) => {
+    if (i !== nameIdx && i !== phoneIdx && h && h !== '') {
+      groupColumns.push({ index: i, name: h });
+    }
+  });
+
+  if (groupColumns.length === 0) {
+    throw new Error('هیچ ستون گروهی پیدا نشد. باید حداقل یه ستون گروه داشته باشی.');
+  }
+
+  // گرفتن گروه‌های موجود
+  const existingGroups = await Groups.getAll();
+  const existingGroupNames = existingGroups.map(g => g.name.toLowerCase().trim());
+
+  // پردازش هر ردیف
+  const processed = [];
+  const newGroups = new Set();
+  const existingStudents = await Students.getAllWithGroups();
+  const existingKeys = new Set(
+    existingStudents.map(s => `${s.full_name.trim()}|${(s.phone || '').trim()}`)
+  );
+
+  for (let i = 0; i < dataRows.length; i++) {
+    const row = dataRows[i];
+    const fullName = String(row[nameIdx] || '').trim();
+    const phone = phoneIdx >= 0 ? normalizePhone(String(row[phoneIdx] || '')) : '';
+
+    // ردیف خالی رو نادیده بگیر
+    if (!fullName) continue;
+
+    // گروه‌های این دانش‌آموز
+    const studentGroups = [];
+    groupColumns.forEach(gc => {
+      const value = String(row[gc.index] || '').trim();
+      if (isChecked(value)) {
+        studentGroups.push(gc.name);
+        // چک گروه جدید
+        if (!existingGroupNames.includes(gc.name.toLowerCase().trim())) {
+          newGroups.add(gc.name);
         }
+      }
+    });
 
-        body.light-mode .admin-header {
-            background: rgba(255, 255, 255, 0.8);
-        }
+    // چک تکراری
+    const key = `${fullName}|${phone}`;
+    const isDuplicate = existingKeys.has(key);
 
-        .admin-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+    processed.push({
+      full_name: fullName,
+      phone: phone,
+      groups: studentGroups,
+      isDuplicate: isDuplicate,
+      rowNumber: i + 2
+    });
+  }
 
-        .admin-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+  return {
+    students: processed,
+    newGroups: Array.from(newGroups),
+    totalRows: processed.length,
+    duplicateCount: processed.filter(s => s.isDuplicate).length,
+    newCount: processed.filter(s => !s.isDuplicate).length,
+    fileName: fileName
+  };
+}
 
-        .section-card {
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(6, 182, 212, 0.15);
-            border-radius: var(--radius);
-            padding: 24px;
-            margin-bottom: 20px;
-        }
+/* ============================================
+   پیدا کردن ایندکس ستون
+   ============================================ */
+function findColumnIndex(header, possibleNames) {
+  const normalized = header.map(h => String(h).toLowerCase().trim());
+  for (const name of possibleNames) {
+    const idx = normalized.indexOf(name.toLowerCase().trim());
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
 
-        body.light-mode .section-card {
-            background: rgba(255, 255, 255, 0.8);
-        }
+/* ============================================
+   تشخیص علامت (✓ / x / 1 / بله / ...)
+   ============================================ */
+function isChecked(value) {
+  if (!value) return false;
+  const v = String(value).trim().toLowerCase();
 
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
+  if (v === '') return false;
+  if (v === '0' || v === 'false' || v === 'no' || v === 'خیر' || v === 'نه' || v === '-') return false;
 
-            .section-header h3 {
-                font-size: 18px;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
+  // هر چیز دیگه‌ای = بله
+  return true;
+}
 
-        .action-bar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-            align-items: center;
-        }
+/* ============================================
+   نرمال‌سازی شماره تلفن
+   ============================================ */
+function normalizePhone(phone) {
+  if (!phone) return '';
 
-            .action-bar .form-select {
-                width: auto;
-                min-width: 200px;
-            }
+  // تبدیل اعداد فارسی به انگلیسی
+  const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+  const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
+  let result = String(phone);
 
-        .attendance-list {
-            max-height: 500px;
-            overflow-y: auto;
-            padding-left: 8px;
-        }
+  for (let i = 0; i < 10; i++) {
+    result = result.replace(new RegExp(persianDigits[i], 'g'), i);
+    result = result.replace(new RegExp(arabicDigits[i], 'g'), i);
+  }
 
-        .counter-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            background: rgba(6, 182, 212, 0.15);
-            color: var(--cyan);
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-        }
+  // حذف کاراکترهای غیرعددی
+  result = result.replace(/[^\d]/g, '');
 
-        .admin-row {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 18px;
-            background: rgba(30, 41, 59, 0.4);
-            border-radius: var(--radius-sm);
-            margin-bottom: 10px;
-            border: 1px solid rgba(6, 182, 212, 0.1);
-        }
+  return result;
+}
 
-        body.light-mode .admin-row {
-            background: rgba(241, 245, 249, 0.8);
-        }
+/* ============================================
+   نمایش پیش‌نمایش Import
+   ============================================ */
+function showImportPreview(data, fileName) {
+  importPreviewData = data;
 
-        .admin-row-info {
-            flex: 1;
-        }
-
-        .admin-row-name {
-            font-size: 15px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .admin-row-phone {
-            font-size: 12px;
-            color: var(--gray);
-            direction: ltr;
-            text-align: right;
-        }
-
-        .session-row {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 16px 18px;
-            background: rgba(30, 41, 59, 0.4);
-            border-radius: var(--radius-sm);
-            margin-bottom: 10px;
-            border-right: 4px solid var(--cyan);
-        }
-
-        body.light-mode .session-row {
-            background: rgba(241, 245, 249, 0.8);
-        }
-
-        .session-info {
-            flex: 1;
-        }
-
-        .session-title-text {
-            font-size: 15px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .session-meta {
-            font-size: 12px;
-            color: var(--gray);
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-
-        @media (max-width: 640px) {
-            .admin-header {
-                padding: 12px 16px;
-            }
-
-            .section-card {
-                padding: 18px;
-            }
-
-            .action-bar .form-select {
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-
-        <!-- ============ هدر ادمین ============ -->
-        <header class="admin-header">
-            <div class="admin-info">
-                <div class="logo-circle" style="width:44px;height:44px;font-size:20px;">👑</div>
-                <div>
-                    <div style="font-weight:700;font-size:15px;" id="adminName">ادمین</div>
-                    <div style="font-size:11px;color:var(--gray);">پنل مدیریت</div>
-                </div>
-                <span class="role-badge super" id="roleBadge">سوپر ادمین</span>
-            </div>
-            <div class="admin-actions">
-                <button class="btn btn-icon" id="themeToggle" title="تغییر تم">🌙</button>
-                <a href="index.html" class="btn btn-ghost">🏠 صفحه اصلی</a>
-                <button class="btn btn-danger" id="logoutBtn">🚪 خروج</button>
-            </div>
-        </header>
-
-        <!-- ============ تب‌ها ============ -->
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="dashboard">📊 داشبورد</button>
-            <button class="tab-btn" data-tab="groups">📁 گروه‌ها</button>
-            <button class="tab-btn" data-tab="students">👥 دانش‌آموزان</button>
-            <button class="tab-btn" data-tab="attendance">✅ ثبت حضور</button>
-            <button class="tab-btn" data-tab="manual">📝 امتیاز متفرقه</button>
-            <button class="tab-btn" data-tab="sessions">📚 جلسات</button>
-            <button class="tab-btn" data-tab="admins" id="adminsTab">🔑 ادمین‌ها</button>
+  const previewHTML = `
+    <div style="margin-bottom:20px;">
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-icon">📄</div>
+          <div class="stat-value" style="font-size:22px;">${data.totalRows}</div>
+          <div class="stat-label">کل ردیف‌ها</div>
         </div>
-
-        <!-- ============ تب داشبورد ============ -->
-        <div class="tab-content active" id="tab-dashboard">
-            <div class="stats-grid" id="statsGrid"></div>
-
-            <div class="section-card">
-                <div class="section-header">
-                    <h3>🕐 آخرین امتیازهای ثبت‌شده</h3>
-                </div>
-                <div id="recentScores"></div>
-            </div>
+        <div class="stat-card" style="border-color:var(--emerald);">
+          <div class="stat-icon">✅</div>
+          <div class="stat-value" style="font-size:22px;background:var(--emerald);-webkit-background-clip:text;">${data.newCount}</div>
+          <div class="stat-label">دانش‌آموز جدید</div>
         </div>
-
-        <!-- ============ تب گروه‌ها ============ -->
-        <div class="tab-content" id="tab-groups">
-            <div class="section-card">
-                <div class="section-header">
-                    <h3>📁 مدیریت گروه‌ها</h3>
-                    <button class="btn btn-primary" onclick="openGroupForm()">➕ گروه جدید</button>
-                </div>
-                <div id="groupsList"></div>
-            </div>
+        <div class="stat-card" style="border-color:var(--warning);">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-value" style="font-size:22px;background:var(--warning);-webkit-background-clip:text;">${data.duplicateCount}</div>
+          <div class="stat-label">تکراری</div>
         </div>
+      </div>
 
-        <!-- ============ تب دانش‌آموزان ============ -->
-        <div class="tab-content" id="tab-students">
-            <div class="section-card">
-                <div class="section-header">
-                    <h3>👥 مدیریت دانش‌آموزان</h3>
-                    <button class="btn btn-primary" onclick="openStudentForm()">➕ دانش‌آموز جدید</button>
-                </div>
-
-                <div class="action-bar">
-                    <select class="form-select" id="filterGroup" onchange="renderStudents()">
-                        <option value="">همه گروه‌ها</option>
-                    </select>
-                    <input type="text" class="form-input" style="flex:1;min-width:200px;" id="studentSearch" placeholder="🔍 جستجو در اسم..." oninput="renderStudents()">
-                </div>
-
-                <div id="studentsList"></div>
-            </div>
+      ${data.newGroups.length > 0 ? `
+        <div style="background:rgba(6,182,212,0.1);border:1px solid var(--cyan);border-radius:12px;padding:14px;margin-bottom:16px;">
+          <strong>🆕 گروه‌های جدید (${data.newGroups.length}):</strong>
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">
+            ${data.newGroups.map(g => `<span class="role-badge admin">${g}</span>`).join('')}
+          </div>
         </div>
+      ` : ''}
 
-        <!-- ============ تب ثبت حضور ============ -->
-        <div class="tab-content" id="tab-attendance">
-            <div class="section-card">
-                <div class="section-header">
-                    <h3>✅ ثبت حضور</h3>
-                    <span class="counter-badge" id="attCounter">۰ نفر انتخاب شده</span>
-                </div>
-
-                <div class="action-bar">
-                    <select class="form-select" id="attGroup" onchange="renderAttendance()">
-                        <option value="">انتخاب گروه...</option>
-                    </select>
-                    <input type="text" class="form-input" style="flex:1;min-width:200px;" id="attSessionTitle" placeholder="📚 عنوان جلسه (مثلاً: قصه‌های قرآنی)">
-                    <button class="btn btn-ghost btn-small" onclick="selectAllAttendance()">همه</button>
-                    <button class="btn btn-ghost btn-small" onclick="deselectAllAttendance()">هیچ‌کدام</button>
-                </div>
-
-                <div class="attendance-list" id="attendanceList"></div>
-
-                <div style="margin-top:20px;">
-                    <div class="form-group">
-                        <label class="form-label">📝 توضیحات / دلیل (اختیاری)</label>
-                        <textarea class="form-textarea" id="attReason" placeholder="مثلاً: جلسه هفتگی، حضور فعال..."></textarea>
-                    </div>
-                    <button class="btn btn-primary" style="width:100%;" onclick="submitAttendance()">
-                        ✅ ثبت حضور و افزودن ۵ امتیاز
-                    </button>
-                </div>
+      <details style="margin-bottom:16px;">
+        <summary style="cursor:pointer;padding:10px;background:rgba(6,182,212,0.1);border-radius:8px;font-weight:600;">
+          📋 مشاهده پیش‌نمایش ردیف‌ها (${data.students.length})
+        </summary>
+        <div style="max-height:300px;overflow-y:auto;margin-top:12px;padding-left:6px;">
+          ${data.students.slice(0, 100).map(s => `
+            <div class="member-item" style="${s.isDuplicate ? 'border-color:var(--warning);' : ''}">
+              <div class="avatar" style="background:${s.isDuplicate ? '#f59e0b' : '#10b981'};width:32px;height:32px;font-size:13px;">
+                ${s.isDuplicate ? '⚠' : '✓'}
+              </div>
+              <div class="member-name">${s.full_name}</div>
+              <div style="font-size:11px;color:var(--gray);">
+                ${s.phone ? `📱 ${s.phone}` : ''}
+                ${s.groups.length > 0 ? ` • 📁 ${s.groups.join(', ')}` : ''}
+              </div>
             </div>
+          `).join('')}
+          ${data.students.length > 100 ? `<p style="text-align:center;color:var(--gray);font-size:12px;margin-top:8px;">... و ${data.students.length - 100} ردیف دیگه</p>` : ''}
         </div>
+      </details>
 
-        <!-- ============ تب امتیاز متفرقه ============ -->
-        <div class="tab-content" id="tab-manual">
-            <div class="section-card">
-                <div class="section-header">
-                    <h3>📝 ثبت امتیاز متفرقه</h3>
-                </div>
+      <div class="form-group">
+        <label class="form-label">🔄 رفتار با دانش‌آموزان تکراری:</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px;cursor:pointer;">
+          <input type="radio" name="dupBehavior" value="skip" checked>
+          <span>نادیده بگیر (فقط جدیدها اضافه بشن)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px;cursor:pointer;">
+          <input type="radio" name="dupBehavior" value="merge">
+          <span>ادغام کن (گروه‌های جدید به تکراری‌ها اضافه بشن)</span>
+        </label>
+      </div>
 
-                <div class="form-group">
-                    <label class="form-label">🔍 جستجوی دانش‌آموز</label>
-                    <input type="text" class="form-input" id="manualSearch" placeholder="اسم دانش‌آموز رو تایپ کن..." oninput="searchManualStudent()">
-                </div>
-
-                <div id="manualSearchResults"></div>
-
-                <div id="manualSelectedBox" style="display:none;margin-top:20px;">
-                    <div class="profile-hero" style="padding:20px;">
-                        <div class="profile-avatar" id="manualAvatar" style="width:60px;height:60px;font-size:24px;">؟</div>
-                        <div class="profile-name" style="font-size:18px;" id="manualName">-</div>
-                        <div class="profile-group" id="manualGroup">-</div>
-                    </div>
-
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label class="form-label">💯 مقدار امتیاز</label>
-                            <input type="number" class="form-input" id="manualAmount" placeholder="مثلاً: 20 یا -5">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">📚 عنوان جلسه (اختیاری)</label>
-                            <input type="text" class="form-input" id="manualSession" placeholder="مثلاً: مسابقه قرآنی">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">📝 دلیل</label>
-                        <textarea class="form-textarea" id="manualReason" placeholder="مثلاً: پاسخ صحیح به سوال..."></textarea>
-                    </div>
-
-                    <button class="btn btn-primary" style="width:100%;" onclick="submitManualScore()">
-                        💾 ثبت امتیاز
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ============ تب جلسات ============ -->
-        <div class="tab-content" id="tab-sessions">
-            <div class="section-card">
-                <div class="section-header">
-                    <h3>📚 مدیریت جلسات</h3>
-                    <button class="btn btn-primary" onclick="openSessionForm()">➕ جلسه جدید</button>
-                </div>
-                <div id="sessionsList"></div>
-            </div>
-        </div>
-
-        <!-- ============ تب ادمین‌ها ============ -->
-        <div class="tab-content" id="tab-admins">
-            <div class="section-card">
-                <div class="section-header">
-                    <h3>🔑 مدیریت ادمین‌ها</h3>
-                    <button class="btn btn-primary" id="addAdminBtn" onclick="openAdminForm()">➕ ادمین جدید</button>
-                </div>
-                <div id="adminsList"></div>
-            </div>
-        </div>
-
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="cancelImport()">❌ انصراف</button>
+        <button class="btn btn-primary" style="flex:2;" onclick="confirmImport()">
+          ✅ تایید و Import (${data.totalRows} نفر)
+        </button>
+      </div>
     </div>
+  `;
 
-    <!-- ============ مودال عمومی ============ -->
-    <div class="modal-overlay" id="mainModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title" id="modalTitle">عنوان</h3>
-                <button class="modal-close" onclick="closeModal()">×</button>
-            </div>
-            <div id="modalBody"></div>
-        </div>
+  document.getElementById('importZone').style.display = 'none';
+  document.getElementById('importPreview').style.display = 'block';
+  document.getElementById('importPreview').innerHTML = previewHTML;
+}
+
+/* ============================================
+   انصراف از Import
+   ============================================ */
+function cancelImport() {
+  importPreviewData = null;
+  document.getElementById('importZone').style.display = 'block';
+  document.getElementById('importPreview').style.display = 'none';
+  document.getElementById('importPreview').innerHTML = '';
+  document.getElementById('fileInput').value = '';
+}
+
+/* ============================================
+   تایید و Import نهایی
+   ============================================ */
+async function confirmImport() {
+  if (!importPreviewData) return;
+
+  const dupBehavior = document.querySelector('input[name="dupBehavior"]:checked').value;
+
+  // فیلتر دانش‌آموزان
+  let toImport = importPreviewData.students;
+
+  if (dupBehavior === 'skip') {
+    toImport = toImport.filter(s => !s.isDuplicate);
+  }
+
+  if (toImport.length === 0) {
+    showToast('چیزی برای Import نیست', 'warning');
+    return;
+  }
+
+  // نمایش Progress
+  const progressHTML = `
+    <div style="text-align:center;padding:40px 20px;">
+      <div class="loader loader-lg"></div>
+      <h3 style="margin-top:20px;font-size:16px;">در حال Import ${toImport.length} نفر...</h3>
+      <p style="color:var(--gray);font-size:13px;margin-top:8px;" id="importProgressText">لطفاً صبر کن...</p>
+      <div style="margin-top:20px;background:rgba(6,182,212,0.1);border-radius:12px;height:8px;overflow:hidden;">
+        <div id="importProgressBar" style="height:100%;width:0%;background:var(--gradient);transition:width 0.3s;"></div>
+      </div>
     </div>
+  `;
 
-    <script src="supabase.js"></script>
-    <script src="admin.js"></script>
-</body>
-</html>
+  document.getElementById('importPreview').innerHTML = progressHTML;
+
+  try {
+    const token = Auth.getToken();
+
+    // تبدیل به فرمت RPC
+    const studentsData = toImport.map(s => ({
+      full_name: s.full_name,
+      phone: s.phone || '',
+      groups: s.groups.map(g => ({ name: g }))
+    }));
+
+    // انیمیشن
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress = Math.min(progress + 15, 90);
+      const bar = document.getElementById('importProgressBar');
+      const text = document.getElementById('importProgressText');
+      if (bar) bar.style.width = progress + '%';
+      if (text) text.textContent = `پردازش شده: ${Math.floor(toImport.length * progress / 100)} از ${toImport.length}`;
+    }, 200);
+
+    // فراخوانی RPC
+    const { data, error } = await db.rpc('bulk_import_students', {
+      p_token: token,
+      p_students: studentsData
+    });
+
+    clearInterval(interval);
+
+    const bar = document.getElementById('importProgressBar');
+    if (bar) bar.style.width = '100%';
+
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+
+    // نتیجه نهایی
+    setTimeout(() => {
+      document.getElementById('importPreview').innerHTML = `
+        <div style="text-align:center;padding:30px 20px;">
+          <div style="font-size:64px;margin-bottom:16px;">🎉</div>
+          <h3 style="font-size:20px;margin-bottom:16px;">Import با موفقیت انجام شد!</h3>
+
+          <div class="stats-grid" style="grid-template-columns:repeat(2,1fr);margin-top:20px;">
+            <div class="stat-card" style="border-color:var(--emerald);">
+              <div class="stat-icon">✅</div>
+              <div class="stat-value" style="background:var(--emerald);-webkit-background-clip:text;">${data.added}</div>
+              <div class="stat-label">دانش‌آموز جدید</div>
+            </div>
+            <div class="stat-card" style="border-color:var(--cyan);">
+              <div class="stat-icon">📁</div>
+              <div class="stat-value">${data.groups_created}</div>
+              <div class="stat-label">گروه جدید</div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" style="width:100%;margin-top:20px;" onclick="finishImport()">
+            🎯 تمام
+          </button>
+        </div>
+      `;
+    }, 400);
+
+  } catch (err) {
+    console.error(err);
+    showToast('خطا در Import: ' + err.message, 'error');
+
+    // برگشت به Preview
+    document.getElementById('importPreview').innerHTML = `
+      <div style="text-align:center;padding:40px;">
+        <div style="font-size:48px;margin-bottom:16px;">❌</div>
+        <h3>خطا در Import</h3>
+        <p style="color:var(--danger);margin-top:12px;font-size:14px;">${err.message}</p>
+        <button class="btn btn-primary" style="margin-top:20px;" onclick="cancelImport()">بازگشت</button>
+      </div>
+    `;
+  }
+}
+
+/* ============================================
+   پایان Import
+   ============================================ */
+async function finishImport() {
+  cancelImport();
+  await loadAll();
+  await renderGroupsList();
+  await renderStudents();
+  renderStats();
+  showToast('✅ همه چیز بروز شد', 'success');
+}
+
+/* ============================================
+   راه‌اندازی Drag & Drop
+   ============================================ */
+function initImportZone() {
+  const zone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
+  if (!zone || !fileInput) return;
+
+  // کلیک روی zone
+  zone.addEventListener('click', () => fileInput.click());
+
+  // انتخاب فایل
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) handleFileUpload(file);
+  });
+
+  // Drag over
+  ['dragenter', 'dragover'].forEach(eventName => {
+    zone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.add('dragover');
+    });
+  });
+
+  // Drag leave
+  ['dragleave', 'drop'].forEach(eventName => {
+    zone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.remove('dragover');
+    });
+  });
+
+  // Drop
+  zone.addEventListener('drop', (e) => {
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileUpload(file);
+  });
+}
+
+/* ============================================
+   راه‌اندازی اولیه
+   ============================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  // کمی تاخیر تا admin.js لود بشه
+  setTimeout(() => {
+    initImportZone();
+  }, 500);
+});
