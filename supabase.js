@@ -77,7 +77,7 @@ const Auth = {
     }
   },
 
-  // چک کردن توکن قبل از هر عملیات (خروجی: توکن یا خطا)
+  // چک کردن توکن قبل از هر عملیات
   requireToken() {
     const token = this.getToken();
     if (!token) {
@@ -89,31 +89,29 @@ const Auth = {
 };
 
 /* ============================================
-   ادمین‌ها (فقط خواندن - عملیات از RPC)
+   ادمین‌ها
    ============================================ */
 const Admins = {
   async getAll() {
-    // از طریق RPC امن - چون policy نداره، نمی‌شه مستقیم خوند
-    // راه‌حل: از یه RPC برای گرفتن لیست ادمین‌ها استفاده می‌کنیم
-    // ولی چون ساده‌ترش می‌کنیم، فعلاً این تابع کار نمی‌کنه
-    // بعداً با RPC اضافه می‌کنیم
+    const token = Auth.getToken();
+    if (!token) return [];
+
     try {
-      const { data, error } = await db
-        .from('admins')
-        .select('id, phone, full_name, role, created_at')
-        .order('created_at', { ascending: false });
+      const { data, error } = await db.rpc('list_admins_secure', {
+        p_token: token
+      });
       if (error) throw error;
-      return data || [];
+      if (!data.success) return [];
+      return data.admins || [];
     } catch (err) {
       console.error('خطا در گرفتن ادمین‌ها:', err);
       return [];
     }
   },
 
-  async create(phone, password, fullName, role = 'admin', createdBy = null) {
+  async create(phone, password, fullName, role = 'admin') {
     const token = Auth.requireToken();
 
-    // از طریق RPC امن
     const { data, error } = await db.rpc('create_admin_secure', {
       p_token: token,
       p_phone: phone,
@@ -152,7 +150,7 @@ const Admins = {
 };
 
 /* ============================================
-   گروه‌ها (خواندن عمومی + نوشتن از RPC)
+   گروه‌ها
    ============================================ */
 const Groups = {
   async getAll() {
@@ -645,4 +643,4 @@ function requireAdmin() {
     return null;
   }
   return admin;
-       }
+         }
