@@ -1,5 +1,5 @@
 /* ============================================
-   منطق پنل ادمین (admin.html) - نسخه ۲
+   منطق پنل ادمین (admin.html) - نسخه امنیتی
    ============================================ */
 
 let currentAdmin = null;
@@ -10,9 +10,20 @@ let manualSelectedStudent = null;
 let selectedMembers = new Set();
 let currentGroupForMembers = null;
 
+/* ============================================
+   راه‌اندازی اولیه
+   ============================================ */
 document.addEventListener('DOMContentLoaded', async () => {
   currentAdmin = requireAdmin();
   if (!currentAdmin) return;
+
+  // چک اعتبار توکن با سرور
+  const valid = await Auth.verify();
+  if (!valid) {
+    Auth.clear();
+    window.location.href = 'login.html';
+    return;
+  }
 
   initHeader();
   initTheme();
@@ -29,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    ============================================ */
 function initHeader() {
   document.getElementById('adminName').textContent = currentAdmin.full_name;
+
   const roleBadge = document.getElementById('roleBadge');
   if (currentAdmin.role === 'super') {
     roleBadge.textContent = '👑 سوپر ادمین';
@@ -87,6 +99,7 @@ async function onTabOpen(tabName) {
   else if (tabName === 'sessions') await renderSessionsList();
   else if (tabName === 'admins') await renderAdminsList();
   else if (tabName === 'history') await renderHistory();
+  else if (tabName === 'audit') await renderAuditLog();
   else if (tabName === 'dashboard') {
     renderStats();
     renderRecentScores();
@@ -245,7 +258,7 @@ async function saveGroup() {
   const desc = document.getElementById('groupDescInput').value.trim();
   if (!name) { showToast('اسم گروه رو وارد کن', 'warning'); return; }
   try {
-    await Groups.create(name, desc, currentAdmin.id);
+    await Groups.create(name, desc);
     showToast('گروه ساخته شد ✅', 'success');
     closeModal();
     await loadAll();
@@ -282,7 +295,7 @@ async function updateGroup(id) {
     await renderGroupsList();
   } catch (err) {
     console.error(err);
-    showToast('خطا', 'error');
+    showToast('خطا: ' + err.message, 'error');
   }
 }
 
@@ -295,18 +308,17 @@ async function deleteGroup(id, name) {
     await renderGroupsList();
   } catch (err) {
     console.error(err);
-    showToast('خطا', 'error');
+    showToast('خطا: ' + err.message, 'error');
   }
 }
 
 /* ============================================
-   مدیریت اعضای گروه 🆕
+   مدیریت اعضای گروه
    ============================================ */
 async function manageGroupMembers(groupId, groupName) {
   currentGroupForMembers = groupId;
   selectedMembers.clear();
 
-  // گرفتن اعضای فعلی گروه
   try {
     const currentMembers = await Groups.getStudents(groupId);
     currentMembers.forEach(s => selectedMembers.add(s.id));
@@ -314,7 +326,6 @@ async function manageGroupMembers(groupId, groupName) {
     console.error('خطا در گرفتن اعضا:', err);
   }
 
-  // همه دانش‌آموزان رو مرتب کن
   const allStudents = [...allStudentsCache].sort((a, b) => a.full_name.localeCompare(b.full_name, 'fa'));
 
   const membersHTML = allStudents.length === 0
@@ -380,19 +391,15 @@ async function saveGroupMembers() {
   if (!currentGroupForMembers) return;
 
   try {
-    // گرفتن لیست فعلی اعضا
     const currentMembers = await Groups.getStudents(currentGroupForMembers);
     const currentIds = currentMembers.map(s => s.id);
 
     const toAdd = [...selectedMembers].filter(id => !currentIds.includes(id));
     const toRemove = currentIds.filter(id => !selectedMembers.has(id));
 
-    // اضافه کردن
     for (const sid of toAdd) {
       await Students.addToGroup(sid, currentGroupForMembers);
     }
-
-    // حذف کردن
     for (const sid of toRemove) {
       await Students.removeFromGroup(sid, currentGroupForMembers);
     }
@@ -416,13 +423,8 @@ async function renderStudents() {
   const search = document.getElementById('studentSearch').value.trim();
 
   let students = allStudentsCache;
-
-  if (filterGroup) {
-    students = students.filter(s => s.groups.some(g => g.id === filterGroup));
-  }
-  if (search) {
-    students = students.filter(s => s.full_name.includes(search));
-  }
+  if (filterGroup) students = students.filter(s => s.groups.some(g => g.id === filterGroup));
+  if (search) students = students.filter(s => s.full_name.includes(search));
 
   if (students.length === 0) {
     container.innerHTML = '<div class="no-result">دانش‌آموزی یافت نشد</div>';
@@ -474,7 +476,7 @@ function openStudentForm() {
       <input type="tel" class="form-input" id="studentPhoneInput" placeholder="09xxxxxxxxx">
     </div>
     <div class="form-group">
-      <label class="form-label">گروه‌ها (چند تا می‌تونی انتخاب کنی)</label>
+      <label class="form-label">گروه‌ها</label>
       <div>${groupsCheckbox || '<div class="no-result">هنوز گروهی ساخته نشده</div>'}</div>
     </div>
     <button class="btn btn-primary" style="width:100%;" onclick="saveStudent()">💾 ذخیره</button>
@@ -489,10 +491,7 @@ async function saveStudent() {
   if (!name) { showToast('اسم رو وارد کن', 'warning'); return; }
 
   try {
-    const student = await Students.create(name, phone);
-    if (groupIds.length > 0) {
-      await Students.setGroups(student.id, groupIds);
-    }
+    await Students.create(name, phone, groupIds);
     showToast('دانش‌آموز اضافه شد ✅', 'success');
     closeModal();
     await loadAll();
@@ -567,7 +566,7 @@ async function deleteStudent(id, name) {
     await renderStudents();
   } catch (err) {
     console.error(err);
-    showToast('خطا در حذف', 'error');
+    showToast('خطا: ' + err.message, 'error');
   }
 }
 
@@ -659,11 +658,13 @@ async function submitAttendance() {
 
   try {
     // ۱. ثبت امتیازها
-    await Scores.addBulk(entries, 'attendance', currentAdmin.id);
+    await Scores.addBulk(entries, 'attendance');
 
-    // ۲. ساخت جلسه و ثبت حضور دقیق
-    const session = await Sessions.create(sessionTitle, new Date().toISOString().split('T')[0], groupId, reason, currentAdmin.id);
-    await AttendanceRecords.addBulk(session.id, Array.from(selectedAttendance));
+    // ۲. ساخت جلسه و ثبت حضور
+    const sessionResult = await Sessions.create(sessionTitle, new Date().toISOString().split('T')[0], groupId, reason);
+    if (sessionResult.success) {
+      await AttendanceRecords.addBulk(sessionResult.id, Array.from(selectedAttendance));
+    }
 
     showToast(`✅ ${entries.length} نفر ثبت شدن (+۵۰ امتیاز)`, 'success');
 
@@ -675,7 +676,7 @@ async function submitAttendance() {
     renderStats();
   } catch (err) {
     console.error(err);
-    showToast('خطا در ثبت: ' + err.message, 'error');
+    showToast('خطا: ' + err.message, 'error');
   }
 }
 
@@ -695,7 +696,6 @@ async function searchManualStudent() {
       return;
     }
 
-    // برای هر کدوم گروه‌هاش رو بگیر
     const withGroups = await Promise.all(
       results.map(async s => ({
         ...s,
@@ -718,7 +718,6 @@ async function searchManualStudent() {
       `;
     }).join('');
 
-    // اتصال رویداد کلیک
     container.querySelectorAll('.search-result').forEach(el => {
       el.addEventListener('click', () => {
         const student = withGroups.find(x => x.id === el.dataset.id);
@@ -760,7 +759,7 @@ async function submitManualScore() {
   const sessionTitle = document.getElementById('manualSession').value.trim();
 
   try {
-    const newTotal = await Scores.add(manualSelectedStudent.id, amount, reason, sessionTitle, 'manual', currentAdmin.id);
+    const newTotal = await Scores.add(manualSelectedStudent.id, amount, reason, sessionTitle, 'manual');
     showToast(`✅ ${amount > 0 ? '+' : ''}${amount} امتیاز ثبت شد. جمع: ${newTotal}`, 'success');
 
     document.getElementById('manualAmount').value = '';
@@ -850,7 +849,7 @@ async function saveSession() {
   if (!title) { showToast('عنوان رو وارد کن', 'warning'); return; }
 
   try {
-    await Sessions.create(title, date, groupId, notes, currentAdmin.id);
+    await Sessions.create(title, date, groupId, notes);
     showToast('جلسه ثبت شد ✅', 'success');
     closeModal();
     await renderSessionsList();
@@ -907,7 +906,7 @@ async function updateSession(id) {
     await renderSessionsList();
   } catch (err) {
     console.error(err);
-    showToast('خطا', 'error');
+    showToast('خطا: ' + err.message, 'error');
   }
 }
 
@@ -920,12 +919,12 @@ async function deleteSession(id, title) {
     await renderHistory();
   } catch (err) {
     console.error(err);
-    showToast('خطا', 'error');
+    showToast('خطا: ' + err.message, 'error');
   }
 }
 
 /* ============================================
-   تاریخچه حضور 🆕
+   تاریخچه حضور
    ============================================ */
 async function renderHistory() {
   const container = document.getElementById('historyList');
@@ -1057,14 +1056,13 @@ async function saveAdmin() {
   if (password.length < 6) { showToast('رمز حداقل ۶ کاراکتر', 'warning'); return; }
 
   try {
-    await Admins.create(phone, password, name, 'admin', currentAdmin.id);
+    await Admins.create(phone, password, name, 'admin');
     showToast('ادمین اضافه شد ✅', 'success');
     closeModal();
     await renderAdminsList();
   } catch (err) {
     console.error(err);
-    if (err.message.includes('duplicate')) showToast('این شماره قبلاً ثبت شده', 'error');
-    else showToast('خطا: ' + err.message, 'error');
+    showToast('خطا: ' + err.message, 'error');
   }
 }
 
@@ -1088,7 +1086,7 @@ async function updateAdminPassword(id) {
     closeModal();
   } catch (err) {
     console.error(err);
-    showToast('خطا', 'error');
+    showToast('خطا: ' + err.message, 'error');
   }
 }
 
@@ -1100,6 +1098,60 @@ async function deleteAdmin(id, name) {
     await renderAdminsList();
   } catch (err) {
     console.error(err);
-    showToast('خطا', 'error');
+    showToast('خطا: ' + err.message, 'error');
   }
-                          }
+}
+
+/* ============================================
+   Audit Log (گزارش فعالیت‌ها) 🆕
+   ============================================ */
+async function renderAuditLog() {
+  const container = document.getElementById('auditList');
+  if (!container) return;
+  container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
+
+  try {
+    const logs = await AuditLog.getRecent(50);
+    if (logs.length === 0) {
+      container.innerHTML = '<div class="no-result">فعالیتی ثبت نشده</div>';
+      return;
+    }
+
+    const actionIcons = {
+      'login': '🔓',
+      'add_score': '⭐',
+      'bulk_score': '✅',
+      'create_student': '👤',
+      'create_group': '📁',
+      'create_admin': '🔑',
+      'create_session': '📚',
+      'update_student': '✏️',
+      'update_group': '✏️',
+      'update_session': '✏️',
+      'update_password': '🔒',
+      'add_to_group': '➕',
+      'remove_from_group': '➖',
+      'set_groups': '🔀',
+      'delete': '🗑️'
+    };
+
+    container.innerHTML = logs.map(log => {
+      const icon = actionIcons[log.action] || '📌';
+      return `
+        <div class="history-item">
+          <div class="history-icon">${icon}</div>
+          <div class="history-content">
+            <div class="history-reason">${log.admin_name || 'سیستم'} — ${log.action}</div>
+            <div class="history-meta">
+              <span>📅 ${toJalaliFull(log.created_at)}</span>
+              ${log.table_name ? `<span>📋 ${log.table_name}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
+  }
+        }
