@@ -67,7 +67,6 @@
     }
     .btn-small { padding: 6px 12px; font-size: 12px; }
 
-    /* انتخاب اعضای گروه */
     .member-item {
       display: flex; align-items: center; gap: 12px;
       padding: 10px 14px; background: rgba(30, 41, 59, 0.4);
@@ -130,6 +129,7 @@
       <button class="tab-btn" data-tab="manual">📝 امتیاز متفرقه</button>
       <button class="tab-btn" data-tab="sessions">📚 جلسات</button>
       <button class="tab-btn" data-tab="history">🕐 تاریخچه حضور</button>
+      <button class="tab-btn" data-tab="audit">📜 گزارش فعالیت</button>
       <button class="tab-btn" data-tab="admins" id="adminsTab">🔑 ادمین‌ها</button>
     </div>
 
@@ -268,6 +268,20 @@
       </div>
     </div>
 
+    <!-- گزارش فعالیت‌ها 🆕 -->
+    <div class="tab-content" id="tab-audit">
+      <div class="section-card">
+        <div class="section-header">
+          <h3>📜 گزارش فعالیت‌های ادمین‌ها</h3>
+          <button class="btn btn-ghost btn-small" onclick="renderAuditLog()">🔄 بروزرسانی</button>
+        </div>
+        <p style="color:var(--gray);font-size:13px;margin-bottom:16px;">
+          آخرین ۵۰ فعالیت ادمین‌ها در سایت
+        </p>
+        <div id="auditList"></div>
+      </div>
+    </div>
+
     <!-- ادمین‌ها -->
     <div class="tab-content" id="tab-admins">
       <div class="section-card">
@@ -295,4 +309,4 @@
   <script src="supabase.js"></script>
   <script src="admin.js"></script>
 </body>
-</html>
+  </html>
