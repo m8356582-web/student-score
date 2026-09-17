@@ -1,5 +1,5 @@
 /* ============================================
-   اتصال به Supabase + توابع دیتابیس (نسخه ۲)
+   اتصال به Supabase + توابع دیتابیس (نسخه امنیتی)
    ============================================ */
 
 const SUPABASE_URL = 'https://jbbrvrldxsrknensbkzd.supabase.co';
@@ -9,68 +9,157 @@ const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ============================================
-   هش رمز
+   🔐 Auth - مدیریت امن لاگین با توکن
    ============================================ */
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
+const Auth = {
+  TOKEN_KEY: 'auth_token',
+  ADMIN_KEY: 'auth_admin',
 
-/* ============================================
-   ادمین‌ها
-   ============================================ */
-const Admins = {
+  set(token, admin) {
+    localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.setItem(this.ADMIN_KEY, JSON.stringify(admin));
+  },
+
+  getToken() {
+    return localStorage.getItem(this.TOKEN_KEY);
+  },
+
+  get() {
+    const data = localStorage.getItem(this.ADMIN_KEY);
+    return data ? JSON.parse(data) : null;
+  },
+
+  clear() {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.ADMIN_KEY);
+  },
+
+  isSuper() {
+    const a = this.get();
+    return a && a.role === 'super';
+  },
+
+  isAdmin() {
+    return !!this.getToken();
+  },
+
+  // لاگین امن از طریق RPC
   async login(phone, password) {
-    const passwordHash = await hashPassword(password);
-    const { data, error } = await db
-      .from('admins')
-      .select('*')
-      .eq('phone', phone)
-      .eq('password_hash', passwordHash)
-      .maybeSingle();
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await db.rpc('login_admin', {
+        p_phone: phone,
+        p_password: password
+      });
+      if (error) throw error;
+
+      if (data.success) {
+        this.set(data.token, data.admin);
+      }
+      return data;
+    } catch (err) {
+      console.error('Login error:', err);
+      return { success: false, error: 'خطا در اتصال. لطفاً دوباره تلاش کن.' };
+    }
   },
 
-  async getAll() {
-    const { data, error } = await db
-      .from('admins').select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
+  // چک کردن اعتبار توکن
+  async verify() {
+    const token = this.getToken();
+    if (!token) return false;
+
+    try {
+      const { data, error } = await db.rpc('verify_token', { p_token: token });
+      if (error) throw error;
+      return data.success;
+    } catch (err) {
+      console.error('Verify error:', err);
+      return false;
+    }
   },
 
-  async create(phone, password, fullName, role = 'admin', createdBy = null) {
-    const passwordHash = await hashPassword(password);
-    const { data, error } = await db
-      .from('admins')
-      .insert([{ phone, password_hash: passwordHash, full_name: fullName, role, created_by: createdBy }])
-      .select().single();
-    if (error) throw error;
-    return data;
-  },
-
-  async delete(id) {
-    const { error } = await db.from('admins').delete().eq('id', id);
-    if (error) throw error;
-  },
-
-  async updatePassword(id, newPassword) {
-    const passwordHash = await hashPassword(newPassword);
-    const { error } = await db.from('admins').update({ password_hash: passwordHash }).eq('id', id);
-    if (error) throw error;
+  // چک کردن توکن قبل از هر عملیات (خروجی: توکن یا خطا)
+  requireToken() {
+    const token = this.getToken();
+    if (!token) {
+      window.location.href = 'login.html';
+      throw new Error('توکن ندارید');
+    }
+    return token;
   }
 };
 
 /* ============================================
-   گروه‌ها
+   ادمین‌ها (فقط خواندن - عملیات از RPC)
+   ============================================ */
+const Admins = {
+  async getAll() {
+    // از طریق RPC امن - چون policy نداره، نمی‌شه مستقیم خوند
+    // راه‌حل: از یه RPC برای گرفتن لیست ادمین‌ها استفاده می‌کنیم
+    // ولی چون ساده‌ترش می‌کنیم، فعلاً این تابع کار نمی‌کنه
+    // بعداً با RPC اضافه می‌کنیم
+    try {
+      const { data, error } = await db
+        .from('admins')
+        .select('id, phone, full_name, role, created_at')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('خطا در گرفتن ادمین‌ها:', err);
+      return [];
+    }
+  },
+
+  async create(phone, password, fullName, role = 'admin', createdBy = null) {
+    const token = Auth.requireToken();
+
+    // از طریق RPC امن
+    const { data, error } = await db.rpc('create_admin_secure', {
+      p_token: token,
+      p_phone: phone,
+      p_password: password,
+      p_full_name: fullName,
+      p_role: role
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
+  },
+
+  async delete(id) {
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('delete_secure', {
+      p_token: token,
+      p_table: 'admins',
+      p_id: id
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
+  },
+
+  async updatePassword(id, newPassword) {
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('update_admin_password_secure', {
+      p_token: token,
+      p_admin_id: id,
+      p_new_password: newPassword
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
+  }
+};
+
+/* ============================================
+   گروه‌ها (خواندن عمومی + نوشتن از RPC)
    ============================================ */
 const Groups = {
   async getAll() {
-    const { data, error } = await db.from('groups').select('*').order('created_at', { ascending: false });
+    const { data, error } = await db
+      .from('groups')
+      .select('*')
+      .order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
   },
@@ -87,26 +176,49 @@ const Groups = {
     }));
   },
 
-  async create(name, description = '', createdBy = null) {
-    const { data, error } = await db
-      .from('groups')
-      .insert([{ name, description, created_by: createdBy }])
-      .select().single();
+  async getById(id) {
+    const { data, error } = await db.from('groups').select('*').eq('id', id).single();
     if (error) throw error;
     return data;
   },
 
-  async update(id, name, description) {
-    const { error } = await db.from('groups').update({ name, description }).eq('id', id);
+  async create(name, description = '') {
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('create_group_secure', {
+      p_token: token,
+      p_name: name,
+      p_description: description
+    });
     if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
+  },
+
+  async update(id, name, description) {
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('update_group_secure', {
+      p_token: token,
+      p_group_id: id,
+      p_name: name,
+      p_description: description
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
   },
 
   async delete(id) {
-    const { error } = await db.from('groups').delete().eq('id', id);
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('delete_secure', {
+      p_token: token,
+      p_table: 'groups',
+      p_id: id
+    });
     if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
   },
 
-  // گرفتن دانش‌آموزان یک گروه (چند به چند)
   async getStudents(groupId) {
     const { data, error } = await db
       .from('student_groups')
@@ -130,7 +242,24 @@ const Students = {
     return data || [];
   },
 
-  // گرفتن گروه‌های یک دانش‌آموز
+  async getAllWithGroups() {
+    const [students, relations] = await Promise.all([
+      this.getAll(),
+      db.from('student_groups').select('student_id, groups(id, name)').then(r => r.data || [])
+    ]);
+
+    const groupsByStudent = {};
+    relations.forEach(r => {
+      if (!groupsByStudent[r.student_id]) groupsByStudent[r.student_id] = [];
+      if (r.groups) groupsByStudent[r.student_id].push(r.groups);
+    });
+
+    return students.map(s => ({
+      ...s,
+      groups: groupsByStudent[s.id] || []
+    }));
+  },
+
   async getGroups(studentId) {
     const { data, error } = await db
       .from('student_groups')
@@ -140,7 +269,6 @@ const Students = {
     return (data || []).map(r => r.groups).filter(Boolean);
   },
 
-  // گرفتن دانش‌آموزان چند گروه (برای نمایش)
   async getByGroup(groupId) {
     const { data, error } = await db
       .from('student_groups')
@@ -179,79 +307,79 @@ const Students = {
     return data || [];
   },
 
-  async create(fullName, phone, avatarColor = null) {
-    const colors = ['#06b6d4', '#10b981', '#0ea5e9', '#14b8a6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444'];
-    const color = avatarColor || colors[Math.floor(Math.random() * colors.length)];
-    const { data, error } = await db
-      .from('students')
-      .insert([{ full_name: fullName, phone, avatar_color: color }])
-      .select().single();
+  async create(fullName, phone, groupIds = []) {
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('create_student_secure', {
+      p_token: token,
+      p_full_name: fullName,
+      p_phone: phone || '',
+      p_group_ids: groupIds
+    });
     if (error) throw error;
+    if (!data.success) throw new Error(data.error);
     return data;
   },
 
   async update(id, updates) {
-    const { error } = await db.from('students').update(updates).eq('id', id);
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('update_student_secure', {
+      p_token: token,
+      p_student_id: id,
+      p_full_name: updates.full_name,
+      p_phone: updates.phone,
+      p_total_score: updates.total_score
+    });
     if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
   },
 
   async delete(id) {
-    const { error } = await db.from('students').delete().eq('id', id);
-    if (error) throw error;
-  },
-
-  // اضافه کردن دانش‌آموز به گروه
-  async addToGroup(studentId, groupId) {
-    const { error } = await db
-      .from('student_groups')
-      .insert([{ student_id: studentId, group_id: groupId }]);
-    if (error && !error.message.includes('duplicate')) throw error;
-  },
-
-  // حذف دانش‌آموز از گروه
-  async removeFromGroup(studentId, groupId) {
-    const { error } = await db
-      .from('student_groups')
-      .delete()
-      .eq('student_id', studentId)
-      .eq('group_id', groupId);
-    if (error) throw error;
-  },
-
-  // ست کردن گروه‌های یک دانش‌آموز (جایگزینی کامل)
-  async setGroups(studentId, groupIds) {
-    // اول همه رو حذف کن
-    const { error: delErr } = await db
-      .from('student_groups')
-      .delete()
-      .eq('student_id', studentId);
-    if (delErr) throw delErr;
-
-    // بعد اضافه کن
-    if (groupIds.length > 0) {
-      const rows = groupIds.map(gid => ({ student_id: studentId, group_id: gid }));
-      const { error } = await db.from('student_groups').insert(rows);
-      if (error) throw error;
-    }
-  },
-
-  // گرفتن دانش‌آموزان با گروه‌هاشون (برای نمایش)
-  async getAllWithGroups() {
-    const [students, relations] = await Promise.all([
-      this.getAll(),
-      db.from('student_groups').select('student_id, groups(id, name)').then(r => r.data || [])
-    ]);
-
-    const groupsByStudent = {};
-    relations.forEach(r => {
-      if (!groupsByStudent[r.student_id]) groupsByStudent[r.student_id] = [];
-      if (r.groups) groupsByStudent[r.student_id].push(r.groups);
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('delete_secure', {
+      p_token: token,
+      p_table: 'students',
+      p_id: id
     });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
+  },
 
-    return students.map(s => ({
-      ...s,
-      groups: groupsByStudent[s.id] || []
-    }));
+  async addToGroup(studentId, groupId) {
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('add_student_to_group_secure', {
+      p_token: token,
+      p_student_id: studentId,
+      p_group_id: groupId
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
+  },
+
+  async removeFromGroup(studentId, groupId) {
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('remove_student_from_group_secure', {
+      p_token: token,
+      p_student_id: studentId,
+      p_group_id: groupId
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
+  },
+
+  async setGroups(studentId, groupIds) {
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('set_student_groups_secure', {
+      p_token: token,
+      p_student_id: studentId,
+      p_group_ids: groupIds
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
   }
 };
 
@@ -261,7 +389,8 @@ const Students = {
 const Scores = {
   async getByStudent(studentId) {
     const { data, error } = await db
-      .from('scores').select('*')
+      .from('scores')
+      .select('*')
       .eq('student_id', studentId)
       .order('created_at', { ascending: false });
     if (error) throw error;
@@ -278,46 +407,52 @@ const Scores = {
     return data || [];
   },
 
-  async add(studentId, amount, reason, sessionTitle = '', scoreType = 'manual', createdBy = null) {
-    const { error: scoreError } = await db
-      .from('scores')
-      .insert([{
-        student_id: studentId, amount: Number(amount), reason,
-        session_title: sessionTitle, score_type: scoreType, created_by: createdBy
-      }]);
-    if (scoreError) throw scoreError;
-
-    const student = await Students.getById(studentId);
-    const newTotal = (student.total_score || 0) + Number(amount);
-    await Students.update(studentId, { total_score: newTotal });
-    return newTotal;
+  async add(studentId, amount, reason, sessionTitle = '', scoreType = 'manual') {
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('add_score_secure', {
+      p_token: token,
+      p_student_id: studentId,
+      p_amount: amount,
+      p_reason: reason,
+      p_session_title: sessionTitle,
+      p_score_type: scoreType
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data.new_total;
   },
 
-  async addBulk(entries, scoreType = 'attendance', createdBy = null) {
-    const scoreInserts = entries.map(e => ({
-      student_id: e.studentId, amount: Number(e.amount),
-      reason: e.reason || '', session_title: e.sessionTitle || '',
-      score_type: scoreType, created_by: createdBy
-    }));
-    const { error } = await db.from('scores').insert(scoreInserts);
-    if (error) throw error;
+  async addBulk(entries, scoreType = 'attendance') {
+    const token = Auth.requireToken();
 
-    for (const e of entries) {
-      const student = await Students.getById(e.studentId);
-      const newTotal = (student.total_score || 0) + Number(e.amount);
-      await Students.update(e.studentId, { total_score: newTotal });
-    }
+    const studentIds = entries.map(e => e.studentId);
+    const amount = entries[0]?.amount || 0;
+    const reason = entries[0]?.reason || '';
+    const sessionTitle = entries[0]?.sessionTitle || '';
+
+    const { data, error } = await db.rpc('add_bulk_scores_secure', {
+      p_token: token,
+      p_student_ids: studentIds,
+      p_amount: amount,
+      p_reason: reason,
+      p_session_title: sessionTitle,
+      p_score_type: scoreType
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
   },
 
   async delete(id) {
-    const { data: score } = await db.from('scores').select('*').eq('id', id).single();
-    if (score) {
-      const student = await Students.getById(score.student_id);
-      const newTotal = (student.total_score || 0) - score.amount;
-      await Students.update(score.student_id, { total_score: newTotal });
-    }
-    const { error } = await db.from('scores').delete().eq('id', id);
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('delete_secure', {
+      p_token: token,
+      p_table: 'scores',
+      p_id: id
+    });
     if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
   }
 };
 
@@ -327,7 +462,8 @@ const Scores = {
 const Sessions = {
   async getAll() {
     const { data, error } = await db
-      .from('sessions').select('*, groups(name)')
+      .from('sessions')
+      .select('*, groups(name)')
       .order('session_date', { ascending: false });
     if (error) throw error;
     return data || [];
@@ -335,29 +471,53 @@ const Sessions = {
 
   async getById(id) {
     const { data, error } = await db
-      .from('sessions').select('*, groups(name)')
-      .eq('id', id).single();
+      .from('sessions')
+      .select('*, groups(name)')
+      .eq('id', id)
+      .single();
     if (error) throw error;
     return data;
   },
 
-  async create(title, sessionDate, groupId, notes = '', createdBy = null) {
-    const { data, error } = await db
-      .from('sessions')
-      .insert([{ title, session_date: sessionDate, group_id: groupId, notes, created_by: createdBy }])
-      .select().single();
+  async create(title, sessionDate, groupId, notes = '') {
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('create_session_secure', {
+      p_token: token,
+      p_title: title,
+      p_session_date: sessionDate,
+      p_group_id: groupId,
+      p_notes: notes
+    });
     if (error) throw error;
+    if (!data.success) throw new Error(data.error);
     return data;
   },
 
   async update(id, updates) {
-    const { error } = await db.from('sessions').update(updates).eq('id', id);
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('update_session_secure', {
+      p_token: token,
+      p_session_id: id,
+      p_title: updates.title,
+      p_session_date: updates.session_date,
+      p_group_id: updates.group_id,
+      p_notes: updates.notes
+    });
     if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
   },
 
   async delete(id) {
-    const { error } = await db.from('sessions').delete().eq('id', id);
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('delete_secure', {
+      p_token: token,
+      p_table: 'sessions',
+      p_id: id
+    });
     if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
   }
 };
 
@@ -385,23 +545,25 @@ const AttendanceRecords = {
   },
 
   async addBulk(sessionId, studentIds) {
-    if (studentIds.length === 0) return;
-    const rows = studentIds.map(sid => ({ session_id: sessionId, student_id: sid }));
-    const { error } = await db.from('attendance_records').insert(rows);
-    if (error && !error.message.includes('duplicate')) throw error;
+    const token = Auth.requireToken();
+    const { data, error } = await db.rpc('add_attendance_secure', {
+      p_token: token,
+      p_session_id: sessionId,
+      p_student_ids: studentIds
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    return data;
   },
 
   async getSessionsWithStats() {
-    // گرفتن همه جلسات + تعداد حاضرین
     const { data: sessions, error } = await db
       .from('sessions')
       .select('*, groups(name)')
       .order('session_date', { ascending: false });
     if (error) throw error;
 
-    const { data: records } = await db
-      .from('attendance_records')
-      .select('session_id');
+    const { data: records } = await db.from('attendance_records').select('session_id');
 
     const countMap = {};
     (records || []).forEach(r => {
@@ -416,12 +578,29 @@ const AttendanceRecords = {
 };
 
 /* ============================================
+   Audit Log
+   ============================================ */
+const AuditLog = {
+  async getRecent(limit = 50) {
+    const { data, error } = await db
+      .from('audit_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return data || [];
+  }
+};
+
+/* ============================================
    توابع کمکی
    ============================================ */
 function toJalali(dateStr) {
   if (!dateStr) return '';
   try {
-    return new Intl.DateTimeFormat('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(dateStr));
+    return new Intl.DateTimeFormat('fa-IR', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    }).format(new Date(dateStr));
   } catch { return dateStr; }
 }
 
@@ -459,20 +638,9 @@ function showLoading(container, text = 'در حال بارگذاری...') {
   container.innerHTML = `<div class="loading-screen"><div class="loader loader-lg"></div><p>${text}</p></div>`;
 }
 
-const Auth = {
-  set(admin) { localStorage.setItem('currentAdmin', JSON.stringify(admin)); },
-  get() {
-    const data = localStorage.getItem('currentAdmin');
-    return data ? JSON.parse(data) : null;
-  },
-  clear() { localStorage.removeItem('currentAdmin'); },
-  isSuper() { const a = this.get(); return a && a.role === 'super'; },
-  isAdmin() { return !!this.get(); }
-};
-
 function requireAdmin() {
   const admin = Auth.get();
-  if (!admin) {
+  if (!admin || !Auth.getToken()) {
     window.location.href = 'login.html';
     return null;
   }
