@@ -1522,3 +1522,287 @@ body.light-mode .smart-card {
     display: none;
   }
    }
+
+
+
+
+
+/* ============================================
+   📊 نمودارها
+   ============================================ */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.chart-full {
+  grid-column: 1 / -1;
+}
+
+.chart-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: all 0.3s;
+}
+
+body.light-mode .chart-card {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.chart-card:hover {
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: var(--shadow-hover);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.chart-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--light);
+}
+
+.chart-body {
+  position: relative;
+  height: 250px;
+}
+
+.chart-full .chart-body {
+  height: 320px;
+}
+
+/* ============================================
+   🏆 Leaderboard
+   ============================================ */
+.leaderboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.leaderboard-header h3 {
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--light);
+}
+
+.leaderboard-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.5);
+  padding: 4px;
+  border-radius: 10px;
+}
+
+body.light-mode .leaderboard-tabs {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.lb-tab {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--gray);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.lb-tab:hover {
+  color: var(--light);
+}
+
+.lb-tab.active {
+  background: var(--gradient);
+  color: white;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+.leaderboard-list {
+  display: grid;
+  gap: 10px;
+}
+
+.lb-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+body.light-mode .lb-item {
+  background: rgba(241, 245, 249, 0.7);
+}
+
+.lb-item:hover {
+  transform: translateX(-4px);
+  border-color: rgba(6, 182, 212, 0.4);
+}
+
+.lb-item.top-1 {
+  border-color: var(--gold);
+  background: rgba(251, 191, 36, 0.08);
+  box-shadow: 0 4px 20px rgba(251, 191, 36, 0.2);
+}
+
+.lb-item.top-2 {
+  border-color: var(--silver);
+  background: rgba(203, 213, 225, 0.08);
+}
+
+.lb-item.top-3 {
+  border-color: var(--bronze);
+  background: rgba(217, 119, 6, 0.08);
+}
+
+.lb-rank {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.lb-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.lb-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--light);
+}
+
+.lb-meta {
+  font-size: 11px;
+  color: var(--gray);
+}
+
+.lb-score {
+  font-size: 20px;
+  font-weight: 800;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   📄 دکمه‌های Export
+   ============================================ */
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 2px solid rgba(6, 182, 212, 0.2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--light);
+  transition: all 0.3s;
+  text-align: right;
+}
+
+body.light-mode .export-btn {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.export-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(6, 182, 212, 0.1);
+  transform: translateY(-2px);
+}
+
+.export-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.export-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.export-desc {
+  font-size: 11px;
+  color: var(--gray);
+}
+
+/* ============================================
+   ریسپانسیو
+   ============================================ */
+@media (max-width: 640px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-full {
+    grid-column: auto;
+  }
+
+  .chart-body {
+    height: 220px;
+  }
+
+  .chart-full .chart-body {
+    height: 250px;
+  }
+
+  .leaderboard-tabs {
+    width: 100%;
+  }
+
+  .lb-tab {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .lb-score {
+    font-size: 16px;
+  }
+}
