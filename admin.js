@@ -1,5 +1,5 @@
 /* ============================================
-   منطق پنل ادمین (admin.html) - نسخه نهایی
+   منطق پنل ادمین (admin.html)
    ============================================ */
 
 let currentAdmin = null;
@@ -11,7 +11,7 @@ let selectedMembers = new Set();
 let currentGroupForMembers = null;
 
 /* ============================================
-   راه‌اندازی اولیه
+   راه‌اندازی
    ============================================ */
 document.addEventListener('DOMContentLoaded', async () => {
   currentAdmin = requireAdmin();
@@ -33,7 +33,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderStats();
   renderRecentScores();
 
-  // 🧠 تحلیل هوشمند
   if (typeof renderSmartAnalysis === 'function') {
     setTimeout(() => renderSmartAnalysis(), 300);
   }
@@ -674,7 +673,6 @@ async function submitAttendance() {
 
     showToast(`✅ ${entries.length} نفر ثبت شدن (+۵۰ امتیاز)`, 'success');
 
-    // 🎉 Confetti
     if (typeof quickConfetti === 'function' && entries.length >= 5) {
       quickConfetti();
     }
@@ -774,7 +772,6 @@ async function submitManualScore() {
     const newTotal = await Scores.add(manualSelectedStudent.id, amount, reason, sessionTitle, 'manual');
     showToast(`✅ ${amount > 0 ? '+' : ''}${amount} امتیاز ثبت شد. جمع: ${newTotal}`, 'success');
 
-    // 🎉 چک امتیاز گِرد
     if (typeof checkMilestone === 'function') {
       checkMilestone(oldTotal, newTotal);
     }
@@ -1163,4 +1160,4 @@ async function renderAuditLog() {
     console.error(err);
     container.innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
   }
-     }
+}
