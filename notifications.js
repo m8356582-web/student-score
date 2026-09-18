@@ -1,17 +1,39 @@
 /* ============================================
-   🔔 سیستم اعلان‌ها + 🏅 نشان‌ها
+   🔔 سیستم اعلان‌ها
    ============================================ */
 
 let notificationsCache = [];
-let notificationPanelOpen = false;
+let unreadCount = 0;
 
 /* ============================================
-   🔔 اعلان‌ها
+   ساخت اعلان (از طریق RPC)
    ============================================ */
+async function createNotification(type, title, message = '', icon = '📌', relatedId = null) {
+  try {
+    const token = Auth.getToken();
+    if (!token) return;
 
-// لود اعلان‌های اخیر
+    await db.rpc('add_notification_secure', {
+      p_token: token,
+      p_type: type,
+      p_title: title,
+      p_message: message,
+      p_icon: icon,
+      p_related_id: relatedId
+    });
+  } catch (err) {
+    console.warn('خطا در ساخت اعلان:', err);
+  }
+}
+
+/* ============================================
+   بارگذاری اعلان‌ها
+   ============================================ */
 async function loadNotifications() {
   try {
+    const admin = Auth.get();
+    if (!admin) return;
+
     const { data, error } = await db
       .from('notifications')
       .select('*')
@@ -20,220 +42,133 @@ async function loadNotifications() {
 
     if (error) throw error;
     notificationsCache = data || [];
-
+    unreadCount = notificationsCache.filter(n => !n.is_read).length;
     updateNotificationBadge();
-    renderNotifications();
+
   } catch (err) {
-    console.error('خطا در اعلان‌ها:', err);
+    console.warn('خطا در بارگذاری اعلان‌ها:', err);
   }
 }
 
-// آپدیت شمارنده اعلان‌های نخوانده
+/* ============================================
+   به‌روزرسانی بج
+   ============================================ */
 function updateNotificationBadge() {
   const badge = document.getElementById('notifBadge');
   if (!badge) return;
 
-  const unread = notificationsCache.filter(n => !n.is_read).length;
-
-  if (unread > 0) {
+  if (unreadCount > 0) {
+    badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
     badge.style.display = 'flex';
-    badge.textContent = unread > 99 ? '99+' : unread;
   } else {
     badge.style.display = 'none';
   }
 }
 
-// رندر پنل اعلان‌ها
+/* ============================================
+   باز کردن پنل اعلان‌ها
+   ============================================ */
+function openNotificationPanel() {
+  const panel = document.getElementById('notifPanel');
+  if (!panel) return;
+
+  const isOpen = panel.classList.contains('active');
+
+  if (isOpen) {
+    panel.classList.remove('active');
+    return;
+  }
+
+  panel.classList.add('active');
+  renderNotifications();
+
+  // بستن با کلیک بیرون
+  setTimeout(() => {
+    document.addEventListener('click', closeNotifOnClickOutside);
+  }, 100);
+}
+
+function closeNotifOnClickOutside(e) {
+  const panel = document.getElementById('notifPanel');
+  const btn = document.getElementById('notifBtn');
+  if (!panel || !btn) return;
+
+  if (!panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.classList.remove('active');
+    document.removeEventListener('click', closeNotifOnClickOutside);
+  }
+}
+
+/* ============================================
+   نمایش اعلان‌ها
+   ============================================ */
 function renderNotifications() {
   const container = document.getElementById('notifList');
   if (!container) return;
 
   if (notificationsCache.length === 0) {
     container.innerHTML = `
-      <div class="empty-state" style="padding:30px 20px;">
-        <div class="empty-icon">🔕</div>
-        <p style="font-size:13px;">هنوز اعلانی نداری</p>
+      <div class="no-result" style="padding:40px 20px;text-align:center;">
+        <div style="font-size:40px;margin-bottom:12px;opacity:0.5;">🔕</div>
+        <p style="font-size:13px;">اعلانی وجود نداره</p>
       </div>
     `;
     return;
   }
 
-  const typeStyles = {
-    'score': { bg: 'rgba(6,182,212,0.1)', border: '#06b6d4' },
-    'session': { bg: 'rgba(16,185,129,0.1)', border: '#10b981' },
-    'student': { bg: 'rgba(139,92,246,0.1)', border: '#8b5cf6' },
-    'alert': { bg: 'rgba(245,158,11,0.1)', border: '#f59e0b' },
-    'group': { bg: 'rgba(236,72,153,0.1)', border: '#ec4899' },
-    'badge': { bg: 'rgba(251,191,36,0.1)', border: '#fbbf24' }
-  };
-
-  container.innerHTML = notificationsCache.map(n => {
-    const style = typeStyles[n.type] || typeStyles['score'];
-    return `
-      <div class="notif-item ${n.is_read ? '' : 'unread'}" style="border-right-color: ${style.border}; background: ${n.is_read ? 'transparent' : style.bg};">
-        <div class="notif-icon">${n.icon || '🔔'}</div>
-        <div class="notif-content">
-          <div class="notif-title">${n.title}</div>
-          ${n.message ? `<div class="notif-message">${n.message}</div>` : ''}
-          <div class="notif-time">${timeAgo(n.created_at)}</div>
-        </div>
+  container.innerHTML = notificationsCache.map(n => `
+    <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markAsRead('${n.id}')">
+      <div class="notif-icon">${n.icon || '📌'}</div>
+      <div class="notif-content">
+        <div class="notif-title">${n.title}</div>
+        ${n.message ? `<div class="notif-message">${n.message}</div>` : ''}
+        <div class="notif-time">${timeAgo(n.created_at)}</div>
       </div>
-    `;
-  }).join('');
-}
-
-// باز/بسته کردن پنل اعلان‌ها
-function toggleNotificationPanel() {
-  const panel = document.getElementById('notifPanel');
-  if (!panel) return;
-
-  notificationPanelOpen = !notificationPanelOpen;
-
-  if (notificationPanelOpen) {
-    panel.classList.add('active');
-    loadNotifications();
-  } else {
-    panel.classList.remove('active');
-  }
-}
-
-// علامت‌گذاری همه به‌عنوان خوانده‌شده
-async function markAllAsRead() {
-  try {
-    const { error } = await db
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('is_read', false);
-
-    if (error) throw error;
-
-    notificationsCache.forEach(n => n.is_read = true);
-    updateNotificationBadge();
-    renderNotifications();
-    showToast('✅ همه خوانده شد', 'success');
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-// ساخت اعلان جدید
-async function createNotification(type, title, message = '', icon = '🔔', relatedId = null) {
-  try {
-    const token = Auth.getToken();
-    if (!token) return;
-
-    const { data, error } = await db.rpc('create_notification', {
-      p_token: token,
-      p_type: type,
-      p_title: title,
-      p_message: message,
-      p_icon: icon,
-      p_related_id: relatedId
-    });
-
-    if (error) throw error;
-    if (data.success) {
-      await loadNotifications();
-    }
-  } catch (err) {
-    console.error('خطا در ساخت اعلان:', err);
-  }
-}
-
-/* ============================================
-   🏅 نشان‌ها
-   ============================================ */
-
-// گرفتن نشان‌های یک دانش‌آموز
-async function getStudentBadges(studentId) {
-  try {
-    const { data, error } = await db
-      .from('badges')
-      .select('*')
-      .eq('student_id', studentId)
-      .order('earned_at', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
-  } catch (err) {
-    console.error('خطا در نشان‌ها:', err);
-    return [];
-  }
-}
-
-// چک کردن و اعطای نشان جدید
-async function checkStudentBadges(studentId) {
-  try {
-    const token = Auth.getToken();
-    if (!token) return [];
-
-    const { data, error } = await db.rpc('check_and_award_badges', {
-      p_token: token,
-      p_student_id: studentId
-    });
-
-    if (error) throw error;
-    if (!data.success) return [];
-
-    const newBadges = data.new_badges || [];
-
-    // برای هر نشان جدید، اعلان بساز
-    for (const badge of newBadges) {
-      await createNotification(
-        'badge',
-        `${badge.icon} نشان جدید!`,
-        `دانش‌آموز نشان «${badge.name}» گرفت`,
-        badge.icon
-      );
-    }
-
-    // اگه نشان جدید داشت، جشن بگیر
-    if (newBadges.length > 0 && typeof quickConfetti === 'function') {
-      quickConfetti();
-    }
-
-    return newBadges;
-  } catch (err) {
-    console.error('خطا در چک نشان:', err);
-    return [];
-  }
-}
-
-// رندر نشان‌ها تو پروفایل
-async function renderBadgesInProfile(studentId, containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  const badges = await getStudentBadges(studentId);
-
-  if (badges.length === 0) {
-    container.innerHTML = '<div class="no-result" style="font-size:12px;">هنوز نشانی نگرفته</div>';
-    return;
-  }
-
-  container.innerHTML = badges.map(b => `
-    <div class="badge-item">
-      <div class="badge-icon">${b.badge_icon}</div>
-      <div class="badge-name">${b.badge_name}</div>
+      ${!n.is_read ? '<div class="notif-dot"></div>' : ''}
     </div>
   `).join('');
 }
 
 /* ============================================
-   ⏱️ زمان نسبی (چند دقیقه پیش)
+   علامت‌گذاری به‌عنوان خوانده‌شده
+   ============================================ */
+async function markAsRead(notifId) {
+  try {
+    await db.from('notifications').update({ is_read: true }).eq('id', notifId);
+    await loadNotifications();
+    renderNotifications();
+  } catch (err) {
+    console.warn('خطا:', err);
+  }
+}
+
+/* ============================================
+   خواندن همه
+   ============================================ */
+async function markAllAsRead() {
+  try {
+    await db.from('notifications').update({ is_read: true }).eq('is_read', false);
+    await loadNotifications();
+    renderNotifications();
+    showToast('✅ همه خونده شدن', 'success');
+  } catch (err) {
+    console.warn('خطا:', err);
+  }
+}
+
+/* ============================================
+   زمان نسبی (چند دقیقه/ساعت پیش)
    ============================================ */
 function timeAgo(dateStr) {
   if (!dateStr) return '';
-
-  const now = new Date();
-  const date = new Date(dateStr);
-  const diff = Math.floor((now - date) / 1000); // ثانیه
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = Math.floor((now - then) / 1000);
 
   if (diff < 60) return 'همین الان';
   if (diff < 3600) return `${Math.floor(diff / 60)} دقیقه پیش`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} ساعت پیش`;
   if (diff < 604800) return `${Math.floor(diff / 86400)} روز پیش`;
-
   return toJalali(dateStr);
 }
 
@@ -241,30 +176,17 @@ function timeAgo(dateStr) {
    راه‌اندازی
    ============================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    // اگه پنل ادمین بازه
-    if (document.getElementById('notifBell')) {
-      loadNotifications();
+  setTimeout(async () => {
+    const btn = document.getElementById('notifBtn');
+    if (btn) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openNotificationPanel();
+      });
+      await loadNotifications();
 
-      // هر ۳۰ ثانیه اعلان‌ها رو بروز کن
-      setInterval(loadNotifications, 30000);
+      // بارگذاری خودکار هر ۶۰ ثانیه
+      setInterval(loadNotifications, 60000);
     }
   }, 1500);
-});
-
-/* ============================================
-   کلیک بیرون برای بستن پنل اعلان
-   ============================================ */
-document.addEventListener('click', (e) => {
-  const panel = document.getElementById('notifPanel');
-  const bell = document.getElementById('notifBell');
-
-  if (!panel || !bell) return;
-
-  if (notificationPanelOpen &&
-      !panel.contains(e.target) &&
-      !bell.contains(e.target)) {
-    notificationPanelOpen = false;
-    panel.classList.remove('active');
-  }
 });
