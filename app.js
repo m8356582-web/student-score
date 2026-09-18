@@ -1,5 +1,5 @@
 /* ============================================
-   منطق صفحه اصلی (index.html) - نسخه ۲
+   منطق صفحه اصلی (index.html)
    ============================================ */
 
 let allStudents = [];
@@ -12,20 +12,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /* ============================================
-   تم
+   تم روشن/تاریک
    ============================================ */
 function initTheme() {
   const savedTheme = localStorage.getItem('theme') || 'dark';
   if (savedTheme === 'light') {
     document.body.classList.add('light-mode');
-    document.getElementById('themeToggle').textContent = '☀️';
+    const toggle = document.getElementById('themeToggle');
+    if (toggle) toggle.textContent = '☀️';
   }
-  document.getElementById('themeToggle').addEventListener('click', () => {
-    document.body.classList.toggle('light-mode');
-    const isLight = document.body.classList.contains('light-mode');
-    localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
-  });
+
+  const toggle = document.getElementById('themeToggle');
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      const isLight = document.body.classList.contains('light-mode');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      toggle.textContent = isLight ? '☀️' : '🌙';
+    });
+  }
 }
 
 /* ============================================
@@ -52,10 +57,16 @@ async function loadData() {
    ============================================ */
 function renderLeaderboard() {
   const container = document.getElementById('leaderboard');
+  if (!container) return;
   const top = allStudents.slice(0, 3);
 
   if (top.length === 0) {
-    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🏆</div><p>هنوز دانش‌آموزی ثبت نشده</p></div>`;
+    container.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1;">
+        <div class="empty-icon">🏆</div>
+        <p>هنوز دانش‌آموزی ثبت نشده</p>
+      </div>
+    `;
     return;
   }
 
@@ -79,9 +90,15 @@ function renderLeaderboard() {
    ============================================ */
 function renderGroups() {
   const container = document.getElementById('groupsGrid');
+  if (!container) return;
 
   if (allGroups.length === 0) {
-    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">📁</div><p>هنوز گروهی ساخته نشده</p></div>`;
+    container.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1;">
+        <div class="empty-icon">📁</div>
+        <p>هنوز گروهی ساخته نشده</p>
+      </div>
+    `;
     return;
   }
 
@@ -98,15 +115,19 @@ function renderGroups() {
    ============================================ */
 function setupSearch() {
   const input = document.getElementById('searchInput');
+  if (!input) return;
   let timer;
+
   input.addEventListener('input', (e) => {
     clearTimeout(timer);
     const query = e.target.value.trim();
+
     if (query.length < 1) {
       document.getElementById('searchResults').style.display = 'none';
       document.getElementById('topSection').style.display = 'block';
       return;
     }
+
     timer = setTimeout(() => doSearch(query), 250);
   });
 }
@@ -125,15 +146,14 @@ async function doSearch(query) {
       return;
     }
 
-    // برای هر دانش‌آموز، گروه‌هاش رو بگیر
-    const studentsWithGroups = await Promise.all(
+    const withGroups = await Promise.all(
       results.map(async s => ({
         ...s,
         groups: await Students.getGroups(s.id)
       }))
     );
 
-    container.innerHTML = studentsWithGroups.map(s => {
+    container.innerHTML = withGroups.map(s => {
       const groupsText = s.groups.length > 0
         ? s.groups.map(g => g.name).join(' • ')
         : 'بدون گروه';
@@ -158,7 +178,7 @@ async function doSearch(query) {
 }
 
 /* ============================================
-   مودال پروفایل
+   پروفایل
    ============================================ */
 async function showProfile(studentId) {
   const modal = document.getElementById('profileModal');
@@ -179,7 +199,6 @@ async function showProfile(studentId) {
       ? groups.map(g => g.name).join(' • ')
       : 'بدون گروه';
 
-    // تاریخچه امتیازات
     const scoreHTML = scores.length === 0
       ? `<div class="no-result">هنوز امتیازی ثبت نشده</div>`
       : scores.map(sc => {
@@ -229,7 +248,7 @@ function closeProfile() {
 }
 
 /* ============================================
-   مودال گروه
+   گروه
    ============================================ */
 async function showGroup(groupId) {
   const modal = document.getElementById('groupModal');
@@ -272,7 +291,7 @@ function closeGroup() {
 }
 
 /* ============================================
-   رویدادها
+   بستن مودال
    ============================================ */
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-overlay')) {
