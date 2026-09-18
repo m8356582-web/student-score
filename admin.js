@@ -1,5 +1,5 @@
 /* ============================================
-   منطق پنل ادمین (admin.html)
+   منطق پنل ادمین (admin.html) - نسخه نهایی
    ============================================ */
 
 let currentAdmin = null;
@@ -37,7 +37,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => renderSmartAnalysis(), 300);
   }
 
-  // راه‌اندازی Auto-complete
   setTimeout(() => initManualAutocomplete(), 1500);
 });
 
@@ -61,6 +60,11 @@ function initHeader() {
       window.location.href = 'login.html';
     }
   });
+
+  // 🆕 آپدیت پروفایل تو هدر
+  if (typeof updateHeaderProfile === 'function') {
+    setTimeout(() => updateHeaderProfile(), 500);
+  }
 }
 
 /* ============================================
@@ -105,6 +109,9 @@ async function onTabOpen(tabName) {
   else if (tabName === 'history') await renderHistory();
   else if (tabName === 'audit') await renderAuditLog();
   else if (tabName === 'badges') await renderBadgesTab();
+  else if (tabName === 'backup') {
+    if (typeof renderBackupTab === 'function') await renderBackupTab();
+  }
   else if (tabName === 'dashboard') {
     renderStats();
     renderRecentScores();
@@ -614,7 +621,6 @@ async function viewStudentBadges(studentId) {
    تب نشان‌ها
    ============================================ */
 async function renderBadgesTab() {
-  // نمایش همه نشان‌های ممکن
   const grid = document.getElementById('allBadgesGrid');
   if (grid) {
     grid.innerHTML = Object.entries(BADGES).map(([type, b]) => `
@@ -626,7 +632,6 @@ async function renderBadgesTab() {
     `).join('');
   }
 
-  // نمایش دانش‌آموزانی که نشان گرفتن
   const list = document.getElementById('awardedBadgesList');
   if (!list) return;
 
@@ -664,7 +669,6 @@ async function renderBadgesTab() {
         </div>
       `;
     }).join('');
-
   } catch (err) {
     console.error(err);
     list.innerHTML = '<div class="no-result">خطا</div>';
@@ -828,7 +832,6 @@ function initManualAutocomplete() {
 
       renderAutocompleteSuggestions(input, dropdown, matches, selectManualStudent);
 
-      // پاک کردن انتخاب قبلی
       if (manualSelectedStudent && manualSelectedStudent.full_name !== query) {
         manualSelectedStudent = null;
         document.getElementById('manualSelectedBox').style.display = 'none';
@@ -860,18 +863,15 @@ function selectManualStudent(student) {
     : 'بدون گروه';
   document.getElementById('manualGroup').textContent = `📁 ${groupsText} — امتیاز فعلی: ${student.total_score || 0}`;
 
-  // بارگذاری پیشنهادها
   loadManualSuggestions(student.id);
 }
 
 async function loadManualSuggestions(studentId) {
-  // پیشنهاد امتیاز
   const amounts = await getSuggestedAmounts(studentId);
   renderAmountSuggestions('amountSuggestions', amounts, (amt) => {
     document.getElementById('manualAmount').value = amt;
   });
 
-  // پیشنهاد دلیل
   const reasons = await getSuggestedReasons();
   renderReasonSuggestions('reasonSuggestions', reasons, (r) => {
     document.getElementById('manualReason').value = r;
@@ -895,12 +895,10 @@ async function submitManualScore() {
       checkMilestone(oldTotal, newTotal);
     }
 
-    // 🏅 بررسی نشان‌ها
     if (typeof checkAndAwardBadges === 'function') {
       await checkAndAwardBadges(manualSelectedStudent.id);
     }
 
-    // 🔔 اعلان
     if (typeof createNotification === 'function' && amount >= 100) {
       await createNotification(
         'score',
@@ -1004,7 +1002,6 @@ async function saveSession() {
   try {
     await Sessions.create(title, date, groupId, notes);
 
-    // 🔔 اعلان
     if (typeof createNotification === 'function') {
       await createNotification('session', `📚 جلسه "${title}" ثبت شد`, notes, '📚');
     }
@@ -1283,7 +1280,7 @@ async function renderAuditLog() {
       'create_session': '📚', 'update_student': '✏️', 'update_group': '✏️',
       'update_session': '✏️', 'update_password': '🔒', 'add_to_group': '➕',
       'remove_from_group': '➖', 'set_groups': '🔀', 'delete': '🗑️',
-      'bulk_import': '📥'
+      'bulk_import': '📥', 'update_profile': '👤'
     };
 
     container.innerHTML = logs.map(log => {
