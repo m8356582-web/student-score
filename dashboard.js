@@ -1,4 +1,4 @@
-/* ============================================
+   /* ============================================
    📊 داشبورد تحلیلی + نمودارها + Leaderboard
    ============================================ */
 
@@ -8,7 +8,7 @@ let groupChart = null;
 let leaderboardPeriod = 'all';
 
 /* ============================================
-   راه‌اندازی نمودارها
+   نمودارها
    ============================================ */
 async function renderCharts() {
   const container = document.getElementById('chartsSection');
@@ -24,25 +24,18 @@ async function renderCharts() {
     if (error) throw error;
     if (!data.success) throw new Error(data.error);
 
-    const stats = data.stats;
     const trend = data.daily_trend || [];
     const types = data.score_types || [];
 
-    // گرفتن گروه‌ها برای نمودار مقایسه
     const [groups, students] = await Promise.all([
       Groups.getAll(),
       Students.getAllWithGroups()
     ]);
 
-    // ساخت داده‌های گروه‌ها
     const groupData = groups.map(g => {
       const groupStudents = students.filter(s => s.groups.some(sg => sg.id === g.id));
       const totalScore = groupStudents.reduce((sum, s) => sum + (s.total_score || 0), 0);
-      return {
-        name: g.name,
-        count: groupStudents.length,
-        total: totalScore
-      };
+      return { name: g.name, count: groupStudents.length, total: totalScore };
     }).sort((a, b) => b.total - a.total).slice(0, 8);
 
     container.innerHTML = `
@@ -67,7 +60,7 @@ async function renderCharts() {
 
         <div class="chart-card">
           <div class="chart-header">
-            <h3>📊 مقایسه گروه‌ها (امتیاز کل)</h3>
+            <h3>📊 مقایسه گروه‌ها</h3>
           </div>
           <div class="chart-body">
             <canvas id="groupChart"></canvas>
@@ -76,7 +69,6 @@ async function renderCharts() {
       </div>
     `;
 
-    // رندر نمودارها
     renderTrendChart(trend);
     renderTypeChart(types);
     renderGroupChart(groupData);
@@ -88,15 +80,13 @@ async function renderCharts() {
 }
 
 /* ============================================
-   نمودار خطی (روند)
+   نمودار خطی
    ============================================ */
 function renderTrendChart(trend) {
   const canvas = document.getElementById('trendChart');
   if (!canvas) return;
-
   if (trendChart) trendChart.destroy();
 
-  // ساخت ۳۰ روز اخیر
   const days = [];
   const dailyTotals = [];
   const dailyStudents = [];
@@ -158,7 +148,7 @@ function renderTrendChart(trend) {
       },
       scales: {
         x: {
-          ticks: { color: '#94a3b8', font: { family: 'Vazirmatn', size: 10 }, maxRotation: 45, minRotation: 0 },
+          ticks: { color: '#94a3b8', font: { family: 'Vazirmatn', size: 10 }, maxRotation: 45 },
           grid: { color: 'rgba(148, 163, 184, 0.1)' }
         },
         y: {
@@ -177,23 +167,17 @@ function renderTrendChart(trend) {
 }
 
 /* ============================================
-   نمودار دایره‌ای (نوع امتیاز)
+   نمودار دایره‌ای
    ============================================ */
 function renderTypeChart(types) {
   const canvas = document.getElementById('typeChart');
   if (!canvas) return;
-
   if (typeChart) typeChart.destroy();
 
-  const typeNames = {
-    'attendance': 'حضور',
-    'manual': 'متفرقه',
-    'bonus': 'پاداش'
-  };
+  const typeNames = { 'attendance': 'حضور', 'manual': 'متفرقه', 'bonus': 'پاداش' };
 
   const labels = types.map(t => typeNames[t.score_type] || t.score_type);
   const values = types.map(t => Number(t.total));
-
   const colors = ['#06b6d4', '#10b981', '#f59e0b'];
 
   if (labels.length === 0) {
@@ -233,12 +217,11 @@ function renderTypeChart(types) {
 }
 
 /* ============================================
-   نمودار میله‌ای (گروه‌ها)
+   نمودار میله‌ای
    ============================================ */
 function renderGroupChart(groupData) {
   const canvas = document.getElementById('groupChart');
   if (!canvas) return;
-
   if (groupChart) groupChart.destroy();
 
   if (groupData.length === 0) {
@@ -271,9 +254,7 @@ function renderGroupChart(groupData) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
+      plugins: { legend: { display: false } },
       scales: {
         x: {
           ticks: { color: '#94a3b8', font: { family: 'Vazirmatn', size: 10 }, maxRotation: 45 },
@@ -290,7 +271,7 @@ function renderGroupChart(groupData) {
 }
 
 /* ============================================
-   🏆 Leaderboard پیشرفته
+   Leaderboard
    ============================================ */
 async function renderLeaderboard(period = 'all') {
   leaderboardPeriod = period;
@@ -310,12 +291,6 @@ async function renderLeaderboard(period = 'all') {
     if (!data.success) throw new Error(data.error);
 
     const leaders = data.leaders || [];
-
-    const periodLabels = {
-      'week': '🗓️ این هفته',
-      'month': '📅 این ماه',
-      'all': '🏆 همه دوران'
-    };
 
     container.innerHTML = `
       <div class="leaderboard-header">
@@ -359,7 +334,7 @@ async function renderLeaderboard(period = 'all') {
 }
 
 /* ============================================
-   نمایش پروفایل دانش‌آموز (مودال)
+   پروفایل دانش‌آموز (مودال)
    ============================================ */
 async function showStudentProfile(studentId) {
   openModal('👤 پروفایل دانش‌آموز', '<div class="loading-screen"><div class="loader loader-lg"></div></div>');
@@ -388,6 +363,12 @@ async function showStudentProfile(studentId) {
         <div class="total-score-big">${student.total_score || 0}</div>
         <div class="total-score-label">امتیاز کل</div>
         ${attendance.length > 0 ? `<div style="margin-top:12px;font-size:13px;color:var(--gray);">✅ حضور در ${attendance.length} جلسه</div>` : ''}
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button class="btn btn-ghost btn-small" style="flex:1;" onclick="exportStudentReport('${studentId}')">
+          📄 دانلود کارنامه
+        </button>
       </div>
 
       <h4 style="margin-bottom:12px;font-size:15px;">📊 آخرین امتیازها</h4>
@@ -419,15 +400,3 @@ async function showStudentProfile(studentId) {
     document.getElementById('modalBody').innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
   }
 }
-
-/* ============================================
-   راه‌اندازی
-   ============================================ */
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    if (document.getElementById('chartsSection')) {
-      renderCharts();
-      renderLeaderboard('all');
-    }
-  }, 1000);
-});
