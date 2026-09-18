@@ -3,15 +3,13 @@
    ============================================ */
 
 /* ============================================
-   دانلود Excel (XLSX)
+   دانلود Excel
    ============================================ */
 function downloadXLSX(data, filename, sheetName = 'Sheet1') {
   try {
-    // ساخت workbook و worksheet
     const ws = XLSX.utils.aoa_to_sheet(data);
     const wb = XLSX.utils.book_new();
 
-    // تنظیم عرض ستون‌ها
     const colWidths = data[0].map((_, i) => {
       let maxLen = 10;
       data.forEach(row => {
@@ -27,7 +25,7 @@ function downloadXLSX(data, filename, sheetName = 'Sheet1') {
     showToast('✅ فایل دانلود شد', 'success');
   } catch (err) {
     console.error(err);
-    showToast('خطا در ساخت فایل: ' + err.message, 'error');
+    showToast('خطا: ' + err.message, 'error');
   }
 }
 
@@ -65,7 +63,7 @@ function downloadCSV(data, filename) {
 }
 
 /* ============================================
-   خروجی دانش‌آموزان (کامل)
+   خروجی دانش‌آموزان
    ============================================ */
 async function exportStudents() {
   try {
@@ -78,10 +76,7 @@ async function exportStudents() {
       return;
     }
 
-    // هدر
     const header = ['ردیف', 'نام', 'تلفن', 'گروه‌ها', 'امتیاز کل'];
-
-    // داده‌ها
     const rows = students.map((s, i) => [
       i + 1,
       s.full_name,
@@ -92,7 +87,6 @@ async function exportStudents() {
 
     const data = [header, ...rows];
 
-    // سؤال: XLSX یا CSV؟
     const choice = confirm('OK = Excel (XLSX)\nCancel = CSV\n\nکدوم رو می‌خوای؟');
 
     if (choice) {
@@ -108,7 +102,7 @@ async function exportStudents() {
 }
 
 /* ============================================
-   خروجی جلسات + حضور
+   خروجی جلسات
    ============================================ */
 async function exportSessions() {
   try {
@@ -122,7 +116,6 @@ async function exportSessions() {
     }
 
     const header = ['ردیف', 'عنوان جلسه', 'تاریخ', 'گروه', 'تعداد حاضر', 'توضیحات'];
-
     const rows = sessions.map((s, i) => [
       i + 1,
       s.title,
@@ -149,7 +142,7 @@ async function exportSessions() {
 }
 
 /* ============================================
-   خروجی تفصیلی امتیازها
+   خروجی تاریخچه امتیازها
    ============================================ */
 async function exportAllScores() {
   try {
@@ -173,8 +166,7 @@ async function exportAllScores() {
       'bonus': 'پاداش'
     };
 
-    const header = ['ردیف', 'نام دانش‌آموز', 'نوع', 'مقدار', 'دلیل', 'جلسه', 'تاریخ'];
-
+    const header = ['ردیف', 'نام', 'نوع', 'مقدار', 'دلیل', 'جلسه', 'تاریخ'];
     const rows = scores.map((s, i) => [
       i + 1,
       s.students?.full_name || '?',
@@ -202,7 +194,7 @@ async function exportAllScores() {
 }
 
 /* ============================================
-   کارنامه فردی (خروجی برای یک دانش‌آموز)
+   کارنامه فردی
    ============================================ */
 async function exportStudentReport(studentId) {
   try {
@@ -217,7 +209,6 @@ async function exportStudentReport(studentId) {
 
     const groupsText = groups.map(g => g.name).join(' • ') || 'بدون گروه';
 
-    // اطلاعات کلی
     const infoData = [
       ['کارنامه دانش‌آموز'],
       [''],
@@ -230,8 +221,6 @@ async function exportStudentReport(studentId) {
       ['']
     ];
 
-    // تاریخچه امتیازها
-    const scoreHeader = [''];
     const scoreHeaderRow = ['ردیف', 'نوع', 'مقدار', 'دلیل', 'جلسه', 'تاریخ'];
 
     const typeNames = {
@@ -266,16 +255,14 @@ async function exportStudentReport(studentId) {
 }
 
 /* ============================================
-   🎯 Confetti (جشن و افکت)
+   🎯 Confetti
    ============================================ */
 function celebrateConfetti() {
-  // بررسی اینکه کتابخانه لود شده
   if (typeof confetti !== 'function') {
     console.warn('canvas-confetti لود نشده');
     return;
   }
 
-  // دو انفجار از دو طرف
   const duration = 2000;
   const animationEnd = Date.now() + duration;
   const defaults = {
@@ -311,7 +298,7 @@ function celebrateConfetti() {
 }
 
 /* ============================================
-   بررسی امتیاز گِرد (۱۰۰، ۵۰۰، ۱۰۰۰، ...)
+   چک امتیاز گِرد
    ============================================ */
 function checkMilestone(oldTotal, newTotal) {
   const milestones = [100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000];
@@ -327,7 +314,7 @@ function checkMilestone(oldTotal, newTotal) {
 }
 
 /* ============================================
-   Confetti سریع (یه انفجار)
+   Confetti سریع
    ============================================ */
 function quickConfetti() {
   if (typeof confetti !== 'function') return;
@@ -341,7 +328,7 @@ function quickConfetti() {
 }
 
 /* ============================================
-   دکمه‌های Export در admin.html
+   دکمه‌های Export در داشبورد
    ============================================ */
 function initExportButtons() {
   const container = document.getElementById('exportButtons');
