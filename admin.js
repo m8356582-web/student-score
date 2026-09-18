@@ -36,6 +36,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof renderSmartAnalysis === 'function') {
     setTimeout(() => renderSmartAnalysis(), 300);
   }
+
+  // راه‌اندازی Auto-complete
+  setTimeout(() => initManualAutocomplete(), 1500);
 });
 
 /* ============================================
@@ -101,6 +104,7 @@ async function onTabOpen(tabName) {
   else if (tabName === 'admins') await renderAdminsList();
   else if (tabName === 'history') await renderHistory();
   else if (tabName === 'audit') await renderAuditLog();
+  else if (tabName === 'badges') await renderBadgesTab();
   else if (tabName === 'dashboard') {
     renderStats();
     renderRecentScores();
@@ -457,6 +461,7 @@ async function renderStudents() {
             <span>⭐ ${s.total_score || 0} امتیاز</span>
           </div>
         </div>
+        <button class="btn btn-ghost btn-small" onclick="viewStudentBadges('${s.id}')" title="نشان‌ها">🏅</button>
         <button class="btn btn-ghost btn-small" onclick="exportStudentReport('${s.id}')" title="کارنامه">📄</button>
         <button class="btn btn-ghost btn-small" onclick="editStudent('${s.id}')">✏️</button>
         <button class="btn btn-danger btn-small" onclick="deleteStudent('${s.id}', '${s.full_name.replace(/'/g, "\\'")}')">🗑️</button>
@@ -578,7 +583,96 @@ async function deleteStudent(id, name) {
 }
 
 /* ============================================
-   ثبت حضور (۵۰ امتیاز)
+   نمایش نشان‌های دانش‌آموز
+   ============================================ */
+async function viewStudentBadges(studentId) {
+  openModal('🏅 نشان‌های دانش‌آموز', '<div class="loading-screen"><div class="loader loader-lg"></div></div>');
+
+  try {
+    const student = await Students.getById(studentId);
+    const badges = await getAllBadgesForStudent(studentId);
+    const earned = badges.filter(b => b.earned).length;
+
+    document.getElementById('modalBody').innerHTML = `
+      <div style="text-align:center;margin-bottom:20px;">
+        <div class="avatar" style="background:${student.avatar_color || '#06b6d4'};width:70px;height:70px;font-size:28px;margin:0 auto 12px;">
+          ${getInitial(student.full_name)}
+        </div>
+        <h3 style="font-size:18px;margin-bottom:4px;">${student.full_name}</h3>
+        <p style="color:var(--gray);font-size:13px;">${earned} از ${badges.length} نشان</p>
+      </div>
+
+      ${renderBadgesHTML(badges)}
+    `;
+  } catch (err) {
+    console.error(err);
+    document.getElementById('modalBody').innerHTML = '<div class="no-result">خطا</div>';
+  }
+}
+
+/* ============================================
+   تب نشان‌ها
+   ============================================ */
+async function renderBadgesTab() {
+  // نمایش همه نشان‌های ممکن
+  const grid = document.getElementById('allBadgesGrid');
+  if (grid) {
+    grid.innerHTML = Object.entries(BADGES).map(([type, b]) => `
+      <div class="badge-item earned" title="${b.description}">
+        <div class="badge-icon">${b.icon}</div>
+        <div class="badge-title">${b.title}</div>
+        <div style="font-size:10px;color:var(--gray);margin-top:2px;">${b.description}</div>
+      </div>
+    `).join('');
+  }
+
+  // نمایش دانش‌آموزانی که نشان گرفتن
+  const list = document.getElementById('awardedBadgesList');
+  if (!list) return;
+
+  list.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
+
+  try {
+    const { data, error } = await db
+      .from('student_badges')
+      .select('badge_type, student_id, awarded_at, students(full_name, avatar_color)')
+      .order('awarded_at', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      list.innerHTML = '<div class="no-result">هنوز نشانی به کسی داده نشده</div>';
+      return;
+    }
+
+    list.innerHTML = data.map(item => {
+      const badge = BADGES[item.badge_type];
+      if (!badge) return '';
+      return `
+        <div class="session-row">
+          <div class="avatar" style="background:${item.students?.avatar_color || '#06b6d4'};width:40px;height:40px;font-size:16px;">
+            ${getInitial(item.students?.full_name)}
+          </div>
+          <div class="session-info">
+            <div class="session-title-text">${item.students?.full_name || '?'}</div>
+            <div class="session-meta">
+              <span>${badge.icon} ${badge.title}</span>
+              <span>📅 ${toJalali(item.awarded_at)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = '<div class="no-result">خطا</div>';
+  }
+}
+
+/* ============================================
+   ثبت حضور
    ============================================ */
 async function renderAttendance() {
   const groupId = document.getElementById('attGroup').value;
@@ -671,6 +765,23 @@ async function submitAttendance() {
       await AttendanceRecords.addBulk(sessionResult.id, Array.from(selectedAttendance));
     }
 
+    // 🏅 بررسی نشان‌ها
+    for (const studentId of selectedAttendance) {
+      if (typeof checkAndAwardBadges === 'function') {
+        await checkAndAwardBadges(studentId);
+      }
+    }
+
+    // 🔔 اعلان
+    if (typeof createNotification === 'function') {
+      await createNotification(
+        'attendance',
+        `✅ ${entries.length} نفر حاضر شدن`,
+        `جلسه: ${sessionTitle}`,
+        '✅'
+      );
+    }
+
     showToast(`✅ ${entries.length} نفر ثبت شدن (+۵۰ امتیاز)`, 'success');
 
     if (typeof quickConfetti === 'function' && entries.length >= 5) {
@@ -684,6 +795,7 @@ async function submitAttendance() {
     await renderAttendance();
     renderStats();
     if (typeof renderSmartAnalysis === 'function') renderSmartAnalysis();
+    if (typeof loadNotifications === 'function') loadNotifications();
   } catch (err) {
     console.error(err);
     showToast('خطا: ' + err.message, 'error');
@@ -691,63 +803,49 @@ async function submitAttendance() {
 }
 
 /* ============================================
-   امتیاز متفرقه
+   Auto-complete امتیاز متفرقه
    ============================================ */
-async function searchManualStudent() {
-  const query = document.getElementById('manualSearch').value.trim();
-  const container = document.getElementById('manualSearchResults');
+function initManualAutocomplete() {
+  const input = document.getElementById('manualSearch');
+  const dropdown = document.getElementById('manualAutocomplete');
+  if (!input || !dropdown) return;
 
-  if (query.length < 1) { container.innerHTML = ''; return; }
+  let timer;
 
-  try {
-    const results = await Students.search(query);
-    if (results.length === 0) {
-      container.innerHTML = '<div class="no-result">نتیجه‌ای پیدا نشد</div>';
+  input.addEventListener('input', (e) => {
+    clearTimeout(timer);
+    const query = e.target.value.trim();
+
+    if (query.length < 1) {
+      dropdown.style.display = 'none';
       return;
     }
 
-    const withGroups = await Promise.all(
-      results.map(async s => ({
-        ...s,
-        groups: await Students.getGroups(s.id)
-      }))
-    );
+    timer = setTimeout(() => {
+      const matches = allStudentsCache
+        .filter(s => s.full_name.includes(query))
+        .sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
 
-    container.innerHTML = withGroups.map(s => {
-      const groupsText = s.groups.length > 0 ? s.groups.map(g => g.name).join(' • ') : 'بدون گروه';
-      return `
-        <div class="search-result" data-id="${s.id}">
-          <div class="avatar" style="background:${s.avatar_color || '#06b6d4'}">
-            ${getInitial(s.full_name)}
-          </div>
-          <div class="student-info">
-            <div class="student-name">${s.full_name}</div>
-            <div class="student-group-name">${groupsText} — ${s.total_score || 0} امتیاز</div>
-          </div>
-        </div>
-      `;
-    }).join('');
+      renderAutocompleteSuggestions(input, dropdown, matches, selectManualStudent);
 
-    container.querySelectorAll('.search-result').forEach(el => {
-      el.addEventListener('click', () => {
-        const student = withGroups.find(x => x.id === el.dataset.id);
-        selectManualStudent({
-          id: student.id,
-          full_name: student.full_name,
-          avatar_color: student.avatar_color,
-          group: student.groups.map(g => g.name).join(' • ') || 'بدون گروه',
-          total_score: student.total_score
-        });
-      });
-    });
-  } catch (err) {
-    console.error(err);
-  }
+      // پاک کردن انتخاب قبلی
+      if (manualSelectedStudent && manualSelectedStudent.full_name !== query) {
+        manualSelectedStudent = null;
+        document.getElementById('manualSelectedBox').style.display = 'none';
+      }
+    }, 150);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
 }
 
 function selectManualStudent(student) {
   manualSelectedStudent = student;
-  document.getElementById('manualSearchResults').innerHTML = '';
+  document.getElementById('manualAutocomplete').style.display = 'none';
   document.getElementById('manualSearch').value = student.full_name;
 
   const box = document.getElementById('manualSelectedBox');
@@ -756,7 +854,28 @@ function selectManualStudent(student) {
   document.getElementById('manualAvatar').textContent = getInitial(student.full_name);
   document.getElementById('manualAvatar').style.background = student.avatar_color || '#06b6d4';
   document.getElementById('manualName').textContent = student.full_name;
-  document.getElementById('manualGroup').textContent = `📁 ${student.group} — امتیاز فعلی: ${student.total_score || 0}`;
+
+  const groupsText = student.groups && student.groups.length > 0
+    ? student.groups.map(g => g.name).join(' • ')
+    : 'بدون گروه';
+  document.getElementById('manualGroup').textContent = `📁 ${groupsText} — امتیاز فعلی: ${student.total_score || 0}`;
+
+  // بارگذاری پیشنهادها
+  loadManualSuggestions(student.id);
+}
+
+async function loadManualSuggestions(studentId) {
+  // پیشنهاد امتیاز
+  const amounts = await getSuggestedAmounts(studentId);
+  renderAmountSuggestions('amountSuggestions', amounts, (amt) => {
+    document.getElementById('manualAmount').value = amt;
+  });
+
+  // پیشنهاد دلیل
+  const reasons = await getSuggestedReasons();
+  renderReasonSuggestions('reasonSuggestions', reasons, (r) => {
+    document.getElementById('manualReason').value = r;
+  });
 }
 
 async function submitManualScore() {
@@ -776,17 +895,36 @@ async function submitManualScore() {
       checkMilestone(oldTotal, newTotal);
     }
 
+    // 🏅 بررسی نشان‌ها
+    if (typeof checkAndAwardBadges === 'function') {
+      await checkAndAwardBadges(manualSelectedStudent.id);
+    }
+
+    // 🔔 اعلان
+    if (typeof createNotification === 'function' && amount >= 100) {
+      await createNotification(
+        'score',
+        `⭐ ${amount} امتیاز به ${manualSelectedStudent.full_name} داده شد`,
+        reason,
+        '⭐',
+        manualSelectedStudent.id
+      );
+    }
+
     document.getElementById('manualAmount').value = '';
     document.getElementById('manualReason').value = '';
     document.getElementById('manualSession').value = '';
     document.getElementById('manualSearch').value = '';
     document.getElementById('manualSelectedBox').style.display = 'none';
+    document.getElementById('amountSuggestions').innerHTML = '';
+    document.getElementById('reasonSuggestions').innerHTML = '';
     manualSelectedStudent = null;
 
     await loadAll();
     renderStats();
     renderRecentScores();
     if (typeof renderSmartAnalysis === 'function') renderSmartAnalysis();
+    if (typeof loadNotifications === 'function') loadNotifications();
   } catch (err) {
     console.error(err);
     showToast('خطا: ' + err.message, 'error');
@@ -834,7 +972,7 @@ function openSessionForm() {
   openModal('📚 جلسه جدید', `
     <div class="form-group">
       <label class="form-label">عنوان جلسه</label>
-      <input type="text" class="form-input" id="sessionTitleInput" placeholder="مثلاً: قصه‌های قرآنی - جلسه ۵">
+      <input type="text" class="form-input" id="sessionTitleInput" placeholder="مثلاً: قصه‌های قرآنی">
     </div>
     <div class="form-group">
       <label class="form-label">تاریخ</label>
@@ -865,9 +1003,16 @@ async function saveSession() {
 
   try {
     await Sessions.create(title, date, groupId, notes);
+
+    // 🔔 اعلان
+    if (typeof createNotification === 'function') {
+      await createNotification('session', `📚 جلسه "${title}" ثبت شد`, notes, '📚');
+    }
+
     showToast('جلسه ثبت شد ✅', 'success');
     closeModal();
     await renderSessionsList();
+    if (typeof loadNotifications === 'function') loadNotifications();
   } catch (err) {
     console.error(err);
     showToast('خطا: ' + err.message, 'error');
@@ -1008,7 +1153,7 @@ async function showSessionDetails(sessionId) {
     `);
   } catch (err) {
     console.error(err);
-    showToast('خطا در بارگذاری', 'error');
+    showToast('خطا', 'error');
   }
 }
 
@@ -1048,7 +1193,7 @@ function openAdminForm() {
   openModal('🔑 ادمین جدید', `
     <div class="form-group">
       <label class="form-label">نام و نام خانوادگی</label>
-      <input type="text" class="form-input" id="adminNameInput" placeholder="مثلاً: علی محمدی">
+      <input type="text" class="form-input" id="adminNameInput">
     </div>
     <div class="form-group">
       <label class="form-label">شماره تلفن</label>
@@ -1158,6 +1303,6 @@ async function renderAuditLog() {
     }).join('');
   } catch (err) {
     console.error(err);
-    container.innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
+    container.innerHTML = '<div class="no-result">خطا</div>';
   }
 }
