@@ -1,287 +1,1955 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>پنل مدیریت | سیستم امتیازدهی</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-</head>
-<body>
+/* ============================================
+   سیستم امتیازدهی - استایل اصلی (نسخه نهایی)
+   ============================================ */
 
-  <div class="container">
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-    <!-- هدر -->
-    <header class="admin-header">
-      <div class="admin-info">
-        <div class="logo-circle" style="width:44px;height:44px;font-size:20px;">👑</div>
-        <div>
-          <div style="font-weight:700;font-size:15px;" id="adminName">ادمین</div>
-          <div style="font-size:11px;color:var(--gray);">پنل مدیریت</div>
-        </div>
-        <span class="role-badge super" id="roleBadge">سوپر ادمین</span>
-      </div>
-      <div class="admin-actions">
-        <button class="btn btn-icon" id="themeToggle" title="تغییر تم">🌙</button>
-        <a href="index.html" class="btn btn-ghost">🏠 صفحه اصلی</a>
-        <button class="btn btn-danger" id="logoutBtn">🚪 خروج</button>
-      </div>
-    </header>
+:root {
+  --cyan: #06b6d4;
+  --emerald: #10b981;
+  --sky: #0ea5e9;
+  --teal: #14b8a6;
+  --dark: #0f172a;
+  --dark-2: #1e293b;
+  --dark-3: #334155;
+  --light: #f8fafc;
+  --gray: #94a3b8;
+  --gray-2: #64748b;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --gold: #fbbf24;
+  --silver: #cbd5e1;
+  --bronze: #d97706;
+  --gradient: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
+  --gradient-2: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%);
+  --shadow: 0 8px 32px rgba(6, 182, 212, 0.15);
+  --shadow-hover: 0 12px 48px rgba(6, 182, 212, 0.3);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
 
-    <!-- تب‌ها -->
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="dashboard">📊 داشبورد</button>
-      <button class="tab-btn" data-tab="groups">📁 گروه‌ها</button>
-      <button class="tab-btn" data-tab="students">👥 دانش‌آموزان</button>
-      <button class="tab-btn" data-tab="import">📥 ورودی اکسل</button>
-      <button class="tab-btn" data-tab="attendance">✅ ثبت حضور</button>
-      <button class="tab-btn" data-tab="manual">📝 امتیاز متفرقه</button>
-      <button class="tab-btn" data-tab="sessions">📚 جلسات</button>
-      <button class="tab-btn" data-tab="history">🕐 تاریخچه حضور</button>
-      <button class="tab-btn" data-tab="audit">📜 گزارش فعالیت</button>
-      <button class="tab-btn" data-tab="admins" id="adminsTab">🔑 ادمین‌ها</button>
-    </div>
+body.light-mode {
+  --dark: #f1f5f9;
+  --dark-2: #ffffff;
+  --dark-3: #e2e8f0;
+  --light: #0f172a;
+  --gray: #64748b;
+  --gray-2: #94a3b8;
+}
 
-    <!-- داشبورد -->
-    <div class="tab-content active" id="tab-dashboard">
-      <div id="smartAnalysis"></div>
-      <div class="stats-grid" id="statsGrid"></div>
-      <div id="chartsSection"></div>
-      <div class="section-card" id="leaderboardSection"></div>
-      <div id="exportButtons"></div>
-      <div class="section-card">
-        <div class="section-header"><h3>🕐 آخرین امتیازهای ثبت‌شده</h3></div>
-        <div id="recentScores"></div>
-      </div>
-    </div>
+body {
+  font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+  background: var(--dark);
+  color: var(--light);
+  min-height: 100vh;
+  direction: rtl;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.15), transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.15), transparent 40%);
+  background-attachment: fixed;
+  transition: background 0.3s, color 0.3s;
+}
 
-    <!-- گروه‌ها -->
-    <div class="tab-content" id="tab-groups">
-      <div class="section-card">
-        <div class="section-header">
-          <h3>📁 مدیریت گروه‌ها</h3>
-          <button class="btn btn-primary" onclick="openGroupForm()">➕ گروه جدید</button>
-        </div>
-        <div id="groupsList"></div>
-      </div>
-    </div>
+/* ============================================
+   کانتینر
+   ============================================ */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
 
-    <!-- دانش‌آموزان -->
-    <div class="tab-content" id="tab-students">
-      <div class="section-card">
-        <div class="section-header">
-          <h3>👥 مدیریت دانش‌آموزان</h3>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-ghost" onclick="exportStudents()">📄 Excel</button>
-            <button class="btn btn-primary" onclick="openStudentForm()">➕ جدید</button>
-          </div>
-        </div>
-        <div class="action-bar">
-          <select class="form-select" id="filterGroup" onchange="renderStudents()">
-            <option value="">همه گروه‌ها</option>
-          </select>
-          <input type="text" class="form-input" style="flex:1;min-width:200px;" id="studentSearch" placeholder="🔍 جستجو در اسم..." oninput="renderStudents()">
-        </div>
-        <div id="studentsList"></div>
-      </div>
-    </div>
+/* ============================================
+   هدر
+   ============================================ */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+  gap: 12px;
+}
 
-    <!-- ورودی اکسل -->
-    <div class="tab-content" id="tab-import">
-      <div class="section-card">
-        <div class="section-header">
-          <h3>📥 ورودی هوشمند اکسل</h3>
-          <button class="btn btn-primary" onclick="downloadSampleFile()">
-            ⬇️ دانلود فایل نمونه
-          </button>
-        </div>
+body.light-mode .header {
+  background: rgba(255, 255, 255, 0.8);
+}
 
-        <p style="color:var(--gray);font-size:13px;margin-bottom:20px;line-height:1.8;">
-          🎯 <b>روش کار:</b><br>
-          ۱. فایل نمونه رو دانلود کن (ستون گروه‌ها خودکار پر می‌شه)<br>
-          ۲. توی Excel بازش کن و اطلاعات رو پر کن<br>
-          ۳. برای عضویت تو گروه، یه علامت (✓ یا 1 یا x یا بله) بذار<br>
-          ۴. فایل رو ذخیره کن<br>
-          ۵. اینجا آپلود کن
-        </p>
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-        <div id="importZone">
-          <div id="dropZone" style="
-            border: 3px dashed rgba(6,182,212,0.4);
-            border-radius: 16px;
-            padding: 50px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: rgba(6,182,212,0.05);
-          ">
-            <div style="font-size: 64px; margin-bottom: 16px; opacity: 0.7;">📁</div>
-            <h3 style="font-size: 18px; margin-bottom: 8px;">فایل رو اینجا بکش و رها کن</h3>
-            <p style="color: var(--gray); font-size: 13px; margin-bottom: 12px;">
-              یا کلیک کن برای انتخاب فایل
-            </p>
-            <div style="display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-              <span class="role-badge admin">📄 CSV</span>
-              <span class="role-badge admin">📊 XLSX / XLS</span>
-            </div>
-          </div>
-          <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;">
-        </div>
+.logo-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.5);
+  flex-shrink: 0;
+}
 
-        <div id="importPreview" style="display: none;"></div>
+.header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
-      </div>
-    </div>
+.header-sub {
+  font-size: 12px;
+  color: var(--gray);
+}
 
-    <!-- ثبت حضور -->
-    <div class="tab-content" id="tab-attendance">
-      <div class="section-card">
-        <div class="section-header">
-          <h3>✅ ثبت حضور (۵۰ امتیاز)</h3>
-          <span class="counter-badge" id="attCounter">۰ نفر انتخاب شده</span>
-        </div>
+.header-left {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
 
-        <div class="action-bar">
-          <select class="form-select" id="attGroup" onchange="renderAttendance()">
-            <option value="">انتخاب گروه...</option>
-          </select>
-          <input type="text" class="form-input" style="flex:1;min-width:200px;" id="attSessionTitle" placeholder="📚 عنوان جلسه (مثلاً: قصه‌های قرآنی)">
-          <button class="btn btn-ghost btn-small" onclick="selectAllAttendance()">همه</button>
-          <button class="btn btn-ghost btn-small" onclick="deselectAllAttendance()">هیچ‌کدام</button>
-        </div>
+/* ============================================
+   هدر ادمین
+   ============================================ */
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+  gap: 12px;
+  position: relative;
+  z-index: 100;
+}
 
-        <div class="attendance-list" id="attendanceList"></div>
+body.light-mode .admin-header {
+  background: rgba(255, 255, 255, 0.8);
+}
 
-        <div style="margin-top:20px;">
-          <div class="form-group">
-            <label class="form-label">📝 توضیحات / دلیل (اختیاری)</label>
-            <textarea class="form-textarea" id="attReason" placeholder="مثلاً: جلسه هفتگی، حضور فعال..."></textarea>
-          </div>
-          <button class="btn btn-primary" style="width:100%;" onclick="submitAttendance()">
-            ✅ ثبت حضور و افزودن ۵۰ امتیاز
-          </button>
-        </div>
-      </div>
-    </div>
+.admin-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-    <!-- امتیاز متفرقه -->
-    <div class="tab-content" id="tab-manual">
-      <div class="section-card">
-        <div class="section-header"><h3>📝 ثبت امتیاز متفرقه</h3></div>
+.admin-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
 
-        <div class="form-group">
-          <label class="form-label">🔍 جستجوی دانش‌آموز</label>
-          <input type="text" class="form-input" id="manualSearch" placeholder="اسم دانش‌آموز رو تایپ کن..." oninput="searchManualStudent()">
-        </div>
+/* ============================================
+   دکمه‌ها
+   ============================================ */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  justify-content: center;
+}
 
-        <div id="manualSearchResults"></div>
+.btn-primary {
+  background: var(--gradient);
+  color: white;
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+}
 
-        <div id="manualSelectedBox" style="display:none;margin-top:20px;">
-          <div class="profile-hero" style="padding:20px;">
-            <div class="profile-avatar" id="manualAvatar" style="width:60px;height:60px;font-size:24px;">؟</div>
-            <div class="profile-name" style="font-size:18px;" id="manualName">-</div>
-            <div class="profile-group" id="manualGroup">-</div>
-          </div>
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
 
-          <div class="grid-2">
-            <div class="form-group">
-              <label class="form-label">💯 مقدار امتیاز</label>
-              <input type="number" class="form-input" id="manualAmount" placeholder="مثلاً: 20 یا -5">
-            </div>
-            <div class="form-group">
-              <label class="form-label">📚 عنوان جلسه (اختیاری)</label>
-              <input type="text" class="form-input" id="manualSession" placeholder="مثلاً: مسابقه قرآنی">
-            </div>
-          </div>
+.btn-ghost {
+  background: transparent;
+  color: var(--light);
+  border: 1px solid var(--dark-3);
+}
 
-          <div class="form-group">
-            <label class="form-label">📝 دلیل</label>
-            <textarea class="form-textarea" id="manualReason" placeholder="مثلاً: پاسخ صحیح به سوال..."></textarea>
-          </div>
+.btn-ghost:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
 
-          <button class="btn btn-primary" style="width:100%;" onclick="submitManualScore()">💾 ثبت امتیاز</button>
-        </div>
-      </div>
-    </div>
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
 
-    <!-- جلسات -->
-    <div class="tab-content" id="tab-sessions">
-      <div class="section-card">
-        <div class="section-header">
-          <h3>📚 مدیریت جلسات</h3>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-ghost" onclick="exportSessions()">📄 Excel</button>
-            <button class="btn btn-primary" onclick="openSessionForm()">➕ جلسه جدید</button>
-          </div>
-        </div>
-        <div id="sessionsList"></div>
-      </div>
-    </div>
+.btn-success {
+  background: var(--emerald);
+  color: white;
+}
 
-    <!-- تاریخچه حضور -->
-    <div class="tab-content" id="tab-history">
-      <div class="section-card">
-        <div class="section-header">
-          <h3>🕐 تاریخچه ثبت حضور</h3>
-        </div>
-        <div class="action-bar">
-          <select class="form-select" id="historyGroupFilter" onchange="renderHistory()">
-            <option value="">همه گروه‌ها</option>
-          </select>
-          <input type="text" class="form-input" style="flex:1;min-width:200px;" id="historySearch" placeholder="🔍 جستجو در عنوان جلسه..." oninput="renderHistory()">
-        </div>
-        <div id="historyList"></div>
-      </div>
-    </div>
+.btn-icon {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(6, 182, 212, 0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
 
-    <!-- گزارش فعالیت‌ها -->
-    <div class="tab-content" id="tab-audit">
-      <div class="section-card">
-        <div class="section-header">
-          <h3>📜 گزارش فعالیت‌های ادمین‌ها</h3>
-          <button class="btn btn-ghost btn-small" onclick="renderAuditLog()">🔄 بروزرسانی</button>
-        </div>
-        <p style="color:var(--gray);font-size:13px;margin-bottom:16px;">
-          آخرین ۵۰ فعالیت ادمین‌ها در سایت
-        </p>
-        <div id="auditList"></div>
-      </div>
-    </div>
+.btn-icon:hover {
+  background: var(--gradient);
+  color: white;
+}
 
-    <!-- ادمین‌ها -->
-    <div class="tab-content" id="tab-admins">
-      <div class="section-card">
-        <div class="section-header">
-          <h3>🔑 مدیریت ادمین‌ها</h3>
-          <button class="btn btn-primary" id="addAdminBtn" onclick="openAdminForm()">➕ ادمین جدید</button>
-        </div>
-        <div id="adminsList"></div>
-      </div>
-    </div>
+.btn-small {
+  padding: 6px 12px;
+  font-size: 12px;
+}
 
-  </div>
+/* ============================================
+   کارت
+   ============================================ */
+.card, .section-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
+}
 
-  <!-- مودال عمومی -->
-  <div class="modal-overlay" id="mainModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 class="modal-title" id="modalTitle">عنوان</h3>
-        <button class="modal-close" onclick="closeModal()">×</button>
-      </div>
-      <div id="modalBody"></div>
-    </div>
-  </div>
+body.light-mode .card,
+body.light-mode .section-card {
+  background: rgba(255, 255, 255, 0.8);
+}
 
-  <script src="supabase.js"></script>
-  <script src="admin.js"></script>
-  <script src="import.js"></script>
-  <script src="ai-engine.js"></script>
-  <script src="dashboard.js"></script>
-  <script src="export.js"></script>
-</body>
-</html>
+.section-card {
+  margin-bottom: 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.section-header h3 {
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ============================================
+   سرچ
+   ============================================ */
+.search-box {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 16px 56px 16px 20px;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(6, 182, 212, 0.2);
+  border-radius: var(--radius);
+  color: var(--light);
+  font-family: inherit;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+body.light-mode .search-box input {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
+}
+
+.search-box::before {
+  content: '🔍';
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  pointer-events: none;
+}
+
+/* ============================================
+   برترین‌ها (صفحه اصلی)
+   ============================================ */
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--light);
+}
+
+.leaderboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.top-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+body.light-mode .top-card {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.top-card.gold {
+  border-color: var(--gold);
+  box-shadow: 0 8px 32px rgba(251, 191, 36, 0.3);
+}
+
+.top-card.silver {
+  border-color: var(--silver);
+  box-shadow: 0 8px 32px rgba(203, 213, 225, 0.3);
+}
+
+.top-card.bronze {
+  border-color: var(--bronze);
+  box-shadow: 0 8px 32px rgba(217, 119, 6, 0.3);
+}
+
+.top-card:hover {
+  transform: translateY(-4px);
+}
+
+.medal {
+  font-size: 40px;
+  flex-shrink: 0;
+}
+
+.top-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.top-card-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.top-card-score {
+  font-size: 14px;
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+.rank-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* ============================================
+   گروه‌ها
+   ============================================ */
+.groups-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.group-card {
+  padding: 20px;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+body.light-mode .group-card {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.group-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--gradient);
+}
+
+.group-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--cyan);
+  box-shadow: var(--shadow-hover);
+}
+
+.group-name {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.group-count {
+  font-size: 13px;
+  color: var(--gray);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ============================================
+   لیست دانش‌آموزان (صفحه اصلی)
+   ============================================ */
+.students-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.student-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.1);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+body.light-mode .student-row {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.student-row:hover {
+  border-color: var(--cyan);
+  transform: translateX(-4px);
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: white;
+  font-size: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.student-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.student-name {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.student-group-name {
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.student-score {
+  font-size: 18px;
+  font-weight: 700;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   مودال
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.3s;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal {
+  background: var(--dark-2);
+  border-radius: var(--radius);
+  padding: 28px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s;
+  border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--light);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--gray);
+  font-size: 24px;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+/* ============================================
+   فرم
+   ============================================ */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--gray);
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--dark);
+  border: 2px solid var(--dark-3);
+  border-radius: var(--radius-sm);
+  color: var(--light);
+  font-family: inherit;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+body.light-mode .form-input,
+body.light-mode .form-textarea,
+body.light-mode .form-select {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
+}
+
+.form-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* ============================================
+   پروفایل
+   ============================================ */
+.profile-hero {
+  text-align: center;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(16, 185, 129, 0.1));
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.profile-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 700;
+  color: white;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
+}
+
+.profile-name {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.profile-group {
+  font-size: 14px;
+  color: var(--gray);
+  margin-bottom: 20px;
+}
+
+.total-score-big {
+  font-size: 48px;
+  font-weight: 800;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.total-score-label {
+  font-size: 13px;
+  color: var(--gray);
+  margin-top: 6px;
+}
+
+/* ============================================
+   تاریخچه
+   ============================================ */
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  border-right: 3px solid var(--emerald);
+}
+
+body.light-mode .history-item {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.history-item.negative {
+  border-right-color: var(--danger);
+}
+
+.history-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.history-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-reason {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.history-meta {
+  font-size: 12px;
+  color: var(--gray);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.history-amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--emerald);
+  flex-shrink: 0;
+}
+
+.history-amount.negative {
+  color: var(--danger);
+}
+
+/* ============================================
+   Toast
+   ============================================ */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--dark-2);
+  color: var(--light);
+  padding: 14px 24px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2000;
+  border: 2px solid var(--cyan);
+  max-width: 90%;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast.success { border-color: var(--emerald); }
+.toast.error { border-color: var(--danger); }
+.toast.warning { border-color: var(--warning); }
+
+/* ============================================
+   Loader
+   ============================================ */
+.loader {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loader-lg {
+  width: 50px;
+  height: 50px;
+  border-width: 5px;
+  border-color: rgba(6, 182, 212, 0.2);
+  border-top-color: var(--cyan);
+}
+
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--gray);
+}
+
+/* ============================================
+   خالی
+   ============================================ */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.no-result {
+  text-align: center;
+  padding: 30px;
+  color: var(--gray);
+  font-size: 14px;
+}
+
+/* ============================================
+   انیمیشن‌ها
+   ============================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.pop-in {
+  animation: pop 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   تب‌ها
+   ============================================ */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  padding: 6px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: var(--radius);
+  backdrop-filter: blur(20px);
+  position: relative;
+  z-index: 50;
+}
+
+body.light-mode .tabs {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  color: var(--gray);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-btn:hover {
+  color: var(--light);
+  background: rgba(6, 182, 212, 0.1);
+}
+
+.tab-btn.active {
+  background: var(--gradient);
+  color: white;
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
+}
+
+.tab-content {
+  display: none;
+  animation: fadeIn 0.3s;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* ============================================
+   Checkbox
+   ============================================ */
+.attendance-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+body.light-mode .attendance-item {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.attendance-item:hover {
+  border-color: rgba(6, 182, 212, 0.4);
+}
+
+.attendance-item.selected {
+  background: rgba(6, 182, 212, 0.1);
+  border-color: var(--cyan);
+}
+
+.custom-checkbox {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--dark-3);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+
+.attendance-item.selected .custom-checkbox {
+  background: var(--emerald);
+  border-color: var(--emerald);
+  color: white;
+}
+
+.attendance-item.selected .custom-checkbox::after {
+  content: '✓';
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.attendance-list {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-left: 8px;
+}
+
+.counter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--cyan);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+
+/* ============================================
+   کارت‌های آماری
+   ============================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  padding: 20px;
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: var(--radius);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  text-align: center;
+  transition: all 0.3s;
+}
+
+body.light-mode .stat-card {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--cyan);
+}
+
+.stat-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--gray);
+  margin-top: 4px;
+}
+
+/* ============================================
+   بج نقش
+   ============================================ */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.role-badge.super {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--gold);
+}
+
+.role-badge.admin {
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--cyan);
+}
+
+/* ============================================
+   کارت‌های هوشمند (Smart Analysis)
+   ============================================ */
+.smart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.smart-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: all 0.3s;
+}
+
+body.light-mode .smart-card {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.smart-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(6, 182, 212, 0.5);
+  box-shadow: var(--shadow-hover);
+}
+
+.smart-card.warning {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.smart-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.smart-card-icon {
+  font-size: 22px;
+}
+
+.smart-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray);
+  flex: 1;
+}
+
+.smart-badge {
+  background: var(--danger);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.smart-card-body {
+  font-size: 13px;
+}
+
+.smart-stat-big {
+  font-size: 32px;
+  font-weight: 800;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.smart-stat-label {
+  font-size: 12px;
+  color: var(--gray);
+  margin-bottom: 8px;
+}
+
+.smart-stat-divider {
+  height: 1px;
+  background: rgba(6, 182, 212, 0.2);
+  margin: 12px 0;
+}
+
+.smart-stat-small {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--light);
+}
+
+.smart-stat-change {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.smart-stat-change.positive {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald);
+}
+
+.smart-stat-change.negative {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+}
+
+.streak-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(6, 182, 212, 0.1);
+}
+
+.streak-item:last-child {
+  border-bottom: none;
+}
+
+.streak-rank {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.streak-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.streak-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--warning);
+  flex-shrink: 0;
+}
+
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.alert-item.warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 3px solid var(--warning);
+}
+
+.alert-item.info {
+  background: rgba(6, 182, 212, 0.1);
+  border-left: 3px solid var(--cyan);
+}
+
+.alert-item.danger {
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid var(--danger);
+}
+
+.smart-more {
+  text-align: center;
+  font-size: 11px;
+  color: var(--gray);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.08);
+  border-left: 3px solid var(--emerald);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ============================================
+   نمودارها
+   ============================================ */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.chart-full {
+  grid-column: 1 / -1;
+}
+
+.chart-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: all 0.3s;
+}
+
+body.light-mode .chart-card {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.chart-card:hover {
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: var(--shadow-hover);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.chart-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--light);
+}
+
+.chart-body {
+  position: relative;
+  height: 250px;
+}
+
+.chart-full .chart-body {
+  height: 320px;
+}
+
+/* ============================================
+   Leaderboard پیشرفته
+   ============================================ */
+.leaderboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.leaderboard-header h3 {
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--light);
+}
+
+.leaderboard-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.5);
+  padding: 4px;
+  border-radius: 10px;
+}
+
+body.light-mode .leaderboard-tabs {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.lb-tab {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--gray);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.lb-tab:hover {
+  color: var(--light);
+}
+
+.lb-tab.active {
+  background: var(--gradient);
+  color: white;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+.leaderboard-list {
+  display: grid;
+  gap: 10px;
+}
+
+.lb-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+body.light-mode .lb-item {
+  background: rgba(241, 245, 249, 0.7);
+}
+
+.lb-item:hover {
+  transform: translateX(-4px);
+  border-color: rgba(6, 182, 212, 0.4);
+}
+
+.lb-item.top-1 {
+  border-color: var(--gold);
+  background: rgba(251, 191, 36, 0.08);
+  box-shadow: 0 4px 20px rgba(251, 191, 36, 0.2);
+}
+
+.lb-item.top-2 {
+  border-color: var(--silver);
+  background: rgba(203, 213, 225, 0.08);
+}
+
+.lb-item.top-3 {
+  border-color: var(--bronze);
+  background: rgba(217, 119, 6, 0.08);
+}
+
+.lb-rank {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.lb-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.lb-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--light);
+}
+
+.lb-meta {
+  font-size: 11px;
+  color: var(--gray);
+}
+
+.lb-score {
+  font-size: 20px;
+  font-weight: 800;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Export Buttons
+   ============================================ */
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 2px solid rgba(6, 182, 212, 0.2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--light);
+  transition: all 0.3s;
+  text-align: right;
+}
+
+body.light-mode .export-btn {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.export-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(6, 182, 212, 0.1);
+  transform: translateY(-2px);
+}
+
+.export-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.export-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.export-desc {
+  font-size: 11px;
+  color: var(--gray);
+}
+
+/* ============================================
+   Session Row
+   ============================================ */
+.session-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  border-right: 4px solid var(--cyan);
+}
+
+body.light-mode .session-row {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.session-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.session-title-text {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.session-meta {
+  font-size: 12px;
+  color: var(--gray);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ============================================
+   Admin Row
+   ============================================ */
+.admin-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  border: 1px solid rgba(6, 182, 212, 0.1);
+}
+
+body.light-mode .admin-row {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.admin-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-row-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.admin-row-phone {
+  font-size: 12px;
+  color: var(--gray);
+  direction: ltr;
+  text-align: right;
+}
+
+/* ============================================
+   Member Item
+   ============================================ */
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+body.light-mode .member-item {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.member-item:hover {
+  border-color: rgba(6, 182, 212, 0.4);
+}
+
+.member-item.selected {
+  background: rgba(6, 182, 212, 0.15);
+  border-color: var(--cyan);
+}
+
+.member-item .custom-checkbox {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--dark-3);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.member-item.selected .custom-checkbox {
+  background: var(--emerald);
+  border-color: var(--emerald);
+  color: white;
+}
+
+.member-item.selected .custom-checkbox::after {
+  content: '✓';
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.member-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ============================================
+   Search Result
+   ============================================ */
+.search-result {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+body.light-mode .search-result {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.search-result:hover {
+  border-color: var(--cyan);
+  background: rgba(6, 182, 212, 0.1);
+}
+
+/* ============================================
+   Command Palette (Ctrl+K)
+   ============================================ */
+.cmd-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 99999;
+  padding: 80px 20px 20px;
+}
+
+.cmd-palette-overlay.active {
+  display: flex;
+  animation: fadeIn 0.2s;
+}
+
+.cmd-palette {
+  width: 100%;
+  max-width: 560px;
+  background: var(--dark-2);
+  border-radius: 16px;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: slideUp 0.3s;
+}
+
+.cmd-palette-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.cmd-palette-input-wrap input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--light);
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.cmd-hint {
+  font-size: 11px;
+  color: var(--gray);
+  padding: 4px 8px;
+  background: rgba(6, 182, 212, 0.1);
+  border-radius: 6px;
+}
+
+.cmd-results {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.cmd-section-title {
+  font-size: 11px;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 12px 12px 8px;
+  font-weight: 700;
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cmd-item:hover {
+  background: rgba(6, 182, 212, 0.15);
+}
+
+.cmd-item-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.cmd-item-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--light);
+}
+
+.cmd-item-sub {
+  font-size: 11px;
+  color: var(--gray);
+  margin-top: 2px;
+}
+
+/* ============================================
+   Drop Zone
+   ============================================ */
+#dropZone {
+  user-select: none;
+}
+
+#dropZone:hover {
+  border-color: var(--cyan) !important;
+  background: rgba(6, 182, 212, 0.1) !important;
+}
+
+#dropZone.dragover {
+  border-color: var(--cyan) !important;
+  background: rgba(6,182,212,0.15) !important;
+  transform: scale(1.02);
+}
+
+/* ============================================
+   Grid 2
+   ============================================ */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ============================================
+   اسکرول‌بار
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gradient);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gradient-2);
+}
+
+a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ============================================
+   ریسپانسیو
+   ============================================ */
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+  }
+
+  .header, .admin-header {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .header h1 {
+    font-size: 16px;
+  }
+
+  .header-sub {
+    font-size: 11px;
+  }
+
+  .logo-circle {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .card, .section-card {
+    padding: 18px;
+  }
+
+  .leaderboard {
+    grid-template-columns: 1fr;
+  }
+
+  .groups-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .total-score-big {
+    font-size: 38px;
+  }
+
+  .modal {
+    padding: 20px;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-full {
+    grid-column: auto;
+  }
+
+  .chart-body {
+    height: 220px;
+  }
+
+  .chart-full .chart-body {
+    height: 250px;
+  }
+
+  .leaderboard-tabs {
+    width: 100%;
+  }
+
+  .lb-tab {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .lb-score {
+    font-size: 16px;
+  }
+
+  .smart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .smart-stat-big {
+    font-size: 26px;
+  }
+
+  .cmd-palette-overlay {
+    padding: 40px 12px 12px;
+  }
+
+  .cmd-palette {
+    max-width: 100%;
+  }
+
+  .cmd-hint {
+    display: none;
+  }
+
+  .action-bar .form-select {
+    width: 100%;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 400px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
