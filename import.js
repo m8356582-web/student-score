@@ -3,38 +3,30 @@
    ============================================ */
 
 let importPreviewData = null;
-let importSelectedGroups = [];
 
 /* ============================================
-   دانلود فایل نمونه CSV
+   دانلود فایل نمونه
    ============================================ */
 async function downloadSampleFile() {
   try {
     showToast('در حال ساخت فایل نمونه...', 'success');
 
-    // گرفتن گروه‌های موجود
     const groups = await Groups.getAll();
     const groupNames = groups.map(g => g.name);
 
-    // اگر گروهی نبود، پیش‌فرض
     if (groupNames.length === 0) {
       groupNames.push('گروه نمونه');
     }
 
-    // ساخت هدر: نام, تلفن, گروه1, گروه2, ...
     const headers = ['نام', 'تلفن', ...groupNames];
-
-    // سه ردیف خالی برای راهنما
     const emptyRow = new Array(headers.length).fill('');
 
-    // ساخت CSV با BOM برای پشتیبانی از فارسی در Excel
     const BOM = '\uFEFF';
     let csv = BOM + headers.join(',') + '\n';
     csv += emptyRow.join(',') + '\n';
     csv += emptyRow.join(',') + '\n';
     csv += emptyRow.join(',') + '\n';
 
-    // دانلود
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -45,15 +37,15 @@ async function downloadSampleFile() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    showToast('✅ فایل نمونه دانلود شد. با Excel بازش کن.', 'success');
+    showToast('✅ فایل نمونه دانلود شد', 'success');
   } catch (err) {
     console.error(err);
-    showToast('خطا در ساخت فایل: ' + err.message, 'error');
+    showToast('خطا: ' + err.message, 'error');
   }
 }
 
 /* ============================================
-   پردازش فایل آپلودی
+   پردازش فایل
    ============================================ */
 async function handleFileUpload(file) {
   if (!file) return;
@@ -79,15 +71,12 @@ async function handleFileUpload(file) {
       return;
     }
 
-    // پردازش هوشمند
     const processed = await processRows(rows, file.name);
-
-    // نمایش پیش‌نمایش
     showImportPreview(processed, file.name);
 
   } catch (err) {
     console.error(err);
-    showToast('خطا در پردازش فایل: ' + err.message, 'error');
+    showToast('خطا: ' + err.message, 'error');
   }
 }
 
@@ -99,9 +88,7 @@ function parseCSV(file) {
     Papa.parse(file, {
       header: false,
       skipEmptyLines: true,
-      complete: (results) => {
-        resolve(results.data);
-      },
+      complete: (results) => resolve(results.data),
       error: (err) => reject(err)
     });
   });
@@ -130,22 +117,19 @@ function parseXLSX(file) {
 }
 
 /* ============================================
-   پردازش هوشمند ردیف‌ها
+   پردازش هوشمند
    ============================================ */
 async function processRows(rows, fileName) {
-  // ردیف اول = هدر
   const header = rows[0].map(h => String(h || '').trim());
   const dataRows = rows.slice(1);
 
-  // تشخیص ستون‌ها
   const nameIdx = findColumnIndex(header, ['نام', 'اسم', 'name', 'full_name', 'fullname', 'نام و نام خانوادگی']);
   const phoneIdx = findColumnIndex(header, ['تلفن', 'موبایل', 'شماره', 'phone', 'mobile', 'tel']);
 
   if (nameIdx === -1) {
-    throw new Error('ستون «نام» پیدا نشد. مطمئن شو ستون اول یا دومی «نام» یا «اسم» هست.');
+    throw new Error('ستون «نام» پیدا نشد');
   }
 
-  // ستون‌های گروه = بقیه ستون‌ها (به‌جز نام و تلفن)
   const groupColumns = [];
   header.forEach((h, i) => {
     if (i !== nameIdx && i !== phoneIdx && h && h !== '') {
@@ -154,14 +138,12 @@ async function processRows(rows, fileName) {
   });
 
   if (groupColumns.length === 0) {
-    throw new Error('هیچ ستون گروهی پیدا نشد. باید حداقل یه ستون گروه داشته باشی.');
+    throw new Error('هیچ ستون گروهی پیدا نشد');
   }
 
-  // گرفتن گروه‌های موجود
   const existingGroups = await Groups.getAll();
   const existingGroupNames = existingGroups.map(g => g.name.toLowerCase().trim());
 
-  // پردازش هر ردیف
   const processed = [];
   const newGroups = new Set();
   const existingStudents = await Students.getAllWithGroups();
@@ -174,23 +156,19 @@ async function processRows(rows, fileName) {
     const fullName = String(row[nameIdx] || '').trim();
     const phone = phoneIdx >= 0 ? normalizePhone(String(row[phoneIdx] || '')) : '';
 
-    // ردیف خالی رو نادیده بگیر
     if (!fullName) continue;
 
-    // گروه‌های این دانش‌آموز
     const studentGroups = [];
     groupColumns.forEach(gc => {
       const value = String(row[gc.index] || '').trim();
       if (isChecked(value)) {
         studentGroups.push(gc.name);
-        // چک گروه جدید
         if (!existingGroupNames.includes(gc.name.toLowerCase().trim())) {
           newGroups.add(gc.name);
         }
       }
     });
 
-    // چک تکراری
     const key = `${fullName}|${phone}`;
     const isDuplicate = existingKeys.has(key);
 
@@ -214,7 +192,7 @@ async function processRows(rows, fileName) {
 }
 
 /* ============================================
-   پیدا کردن ایندکس ستون
+   توابع کمکی
    ============================================ */
 function findColumnIndex(header, possibleNames) {
   const normalized = header.map(h => String(h).toLowerCase().trim());
@@ -225,27 +203,16 @@ function findColumnIndex(header, possibleNames) {
   return -1;
 }
 
-/* ============================================
-   تشخیص علامت (✓ / x / 1 / بله / ...)
-   ============================================ */
 function isChecked(value) {
   if (!value) return false;
   const v = String(value).trim().toLowerCase();
-
   if (v === '') return false;
   if (v === '0' || v === 'false' || v === 'no' || v === 'خیر' || v === 'نه' || v === '-') return false;
-
-  // هر چیز دیگه‌ای = بله
   return true;
 }
 
-/* ============================================
-   نرمال‌سازی شماره تلفن
-   ============================================ */
 function normalizePhone(phone) {
   if (!phone) return '';
-
-  // تبدیل اعداد فارسی به انگلیسی
   const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
   const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
   let result = String(phone);
@@ -255,14 +222,12 @@ function normalizePhone(phone) {
     result = result.replace(new RegExp(arabicDigits[i], 'g'), i);
   }
 
-  // حذف کاراکترهای غیرعددی
   result = result.replace(/[^\d]/g, '');
-
   return result;
 }
 
 /* ============================================
-   نمایش پیش‌نمایش Import
+   پیش‌نمایش
    ============================================ */
 function showImportPreview(data, fileName) {
   importPreviewData = data;
@@ -277,12 +242,12 @@ function showImportPreview(data, fileName) {
         </div>
         <div class="stat-card" style="border-color:var(--emerald);">
           <div class="stat-icon">✅</div>
-          <div class="stat-value" style="font-size:22px;background:var(--emerald);-webkit-background-clip:text;">${data.newCount}</div>
-          <div class="stat-label">دانش‌آموز جدید</div>
+          <div class="stat-value" style="font-size:22px;">${data.newCount}</div>
+          <div class="stat-label">جدید</div>
         </div>
         <div class="stat-card" style="border-color:var(--warning);">
           <div class="stat-icon">⚠️</div>
-          <div class="stat-value" style="font-size:22px;background:var(--warning);-webkit-background-clip:text;">${data.duplicateCount}</div>
+          <div class="stat-value" style="font-size:22px;">${data.duplicateCount}</div>
           <div class="stat-label">تکراری</div>
         </div>
       </div>
@@ -298,7 +263,7 @@ function showImportPreview(data, fileName) {
 
       <details style="margin-bottom:16px;">
         <summary style="cursor:pointer;padding:10px;background:rgba(6,182,212,0.1);border-radius:8px;font-weight:600;">
-          📋 مشاهده پیش‌نمایش ردیف‌ها (${data.students.length})
+          📋 پیش‌نمایش ردیف‌ها (${data.students.length})
         </summary>
         <div style="max-height:300px;overflow-y:auto;margin-top:12px;padding-left:6px;">
           ${data.students.slice(0, 100).map(s => `
@@ -318,14 +283,14 @@ function showImportPreview(data, fileName) {
       </details>
 
       <div class="form-group">
-        <label class="form-label">🔄 رفتار با دانش‌آموزان تکراری:</label>
+        <label class="form-label">🔄 رفتار با تکراری‌ها:</label>
         <label style="display:flex;align-items:center;gap:8px;padding:10px;cursor:pointer;">
           <input type="radio" name="dupBehavior" value="skip" checked>
-          <span>نادیده بگیر (فقط جدیدها اضافه بشن)</span>
+          <span>نادیده بگیر (فقط جدیدها)</span>
         </label>
         <label style="display:flex;align-items:center;gap:8px;padding:10px;cursor:pointer;">
           <input type="radio" name="dupBehavior" value="merge">
-          <span>ادغام کن (گروه‌های جدید به تکراری‌ها اضافه بشن)</span>
+          <span>ادغام کن (گروه جدید به تکراری‌ها اضافه بشه)</span>
         </label>
       </div>
 
@@ -344,7 +309,7 @@ function showImportPreview(data, fileName) {
 }
 
 /* ============================================
-   انصراف از Import
+   انصراف
    ============================================ */
 function cancelImport() {
   importPreviewData = null;
@@ -355,16 +320,14 @@ function cancelImport() {
 }
 
 /* ============================================
-   تایید و Import نهایی
+   تایید و Import
    ============================================ */
 async function confirmImport() {
   if (!importPreviewData) return;
 
   const dupBehavior = document.querySelector('input[name="dupBehavior"]:checked').value;
 
-  // فیلتر دانش‌آموزان
   let toImport = importPreviewData.students;
-
   if (dupBehavior === 'skip') {
     toImport = toImport.filter(s => !s.isDuplicate);
   }
@@ -374,7 +337,6 @@ async function confirmImport() {
     return;
   }
 
-  // نمایش Progress
   const progressHTML = `
     <div style="text-align:center;padding:40px 20px;">
       <div class="loader loader-lg"></div>
@@ -391,24 +353,21 @@ async function confirmImport() {
   try {
     const token = Auth.getToken();
 
-    // تبدیل به فرمت RPC
     const studentsData = toImport.map(s => ({
       full_name: s.full_name,
       phone: s.phone || '',
       groups: s.groups.map(g => ({ name: g }))
     }));
 
-    // انیمیشن
     let progress = 0;
     const interval = setInterval(() => {
       progress = Math.min(progress + 15, 90);
       const bar = document.getElementById('importProgressBar');
       const text = document.getElementById('importProgressText');
       if (bar) bar.style.width = progress + '%';
-      if (text) text.textContent = `پردازش شده: ${Math.floor(toImport.length * progress / 100)} از ${toImport.length}`;
+      if (text) text.textContent = `پردازش: ${Math.floor(toImport.length * progress / 100)} از ${toImport.length}`;
     }, 200);
 
-    // فراخوانی RPC
     const { data, error } = await db.rpc('bulk_import_students', {
       p_token: token,
       p_students: studentsData
@@ -422,7 +381,6 @@ async function confirmImport() {
     if (error) throw error;
     if (!data.success) throw new Error(data.error);
 
-    // نتیجه نهایی
     setTimeout(() => {
       document.getElementById('importPreview').innerHTML = `
         <div style="text-align:center;padding:30px 20px;">
@@ -432,7 +390,7 @@ async function confirmImport() {
           <div class="stats-grid" style="grid-template-columns:repeat(2,1fr);margin-top:20px;">
             <div class="stat-card" style="border-color:var(--emerald);">
               <div class="stat-icon">✅</div>
-              <div class="stat-value" style="background:var(--emerald);-webkit-background-clip:text;">${data.added}</div>
+              <div class="stat-value">${data.added}</div>
               <div class="stat-label">دانش‌آموز جدید</div>
             </div>
             <div class="stat-card" style="border-color:var(--cyan);">
@@ -447,13 +405,14 @@ async function confirmImport() {
           </button>
         </div>
       `;
+
+      if (typeof quickConfetti === 'function') quickConfetti();
     }, 400);
 
   } catch (err) {
     console.error(err);
     showToast('خطا در Import: ' + err.message, 'error');
 
-    // برگشت به Preview
     document.getElementById('importPreview').innerHTML = `
       <div style="text-align:center;padding:40px;">
         <div style="font-size:48px;margin-bottom:16px;">❌</div>
@@ -466,7 +425,7 @@ async function confirmImport() {
 }
 
 /* ============================================
-   پایان Import
+   پایان
    ============================================ */
 async function finishImport() {
   cancelImport();
@@ -485,17 +444,16 @@ function initImportZone() {
   const fileInput = document.getElementById('fileInput');
 
   if (!zone || !fileInput) return;
+  if (zone.dataset.initialized === '1') return;
+  zone.dataset.initialized = '1';
 
-  // کلیک روی zone
   zone.addEventListener('click', () => fileInput.click());
 
-  // انتخاب فایل
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) handleFileUpload(file);
   });
 
-  // Drag over
   ['dragenter', 'dragover'].forEach(eventName => {
     zone.addEventListener(eventName, (e) => {
       e.preventDefault();
@@ -504,7 +462,6 @@ function initImportZone() {
     });
   });
 
-  // Drag leave
   ['dragleave', 'drop'].forEach(eventName => {
     zone.addEventListener(eventName, (e) => {
       e.preventDefault();
@@ -513,19 +470,8 @@ function initImportZone() {
     });
   });
 
-  // Drop
   zone.addEventListener('drop', (e) => {
     const file = e.dataTransfer.files[0];
     if (file) handleFileUpload(file);
   });
 }
-
-/* ============================================
-   راه‌اندازی اولیه
-   ============================================ */
-document.addEventListener('DOMContentLoaded', () => {
-  // کمی تاخیر تا admin.js لود بشه
-  setTimeout(() => {
-    initImportZone();
-  }, 500);
-});
