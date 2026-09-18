@@ -102,149 +102,195 @@
       transform: scale(1.02);
     }
 
-    /* Charts */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .chart-full { grid-column: 1 / -1; }
-    .chart-card {
-      background: rgba(30, 41, 59, 0.6);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(6, 182, 212, 0.15);
-      border-radius: var(--radius);
-      padding: 20px;
-      transition: all 0.3s;
-    }
-    body.light-mode .chart-card { background: rgba(255, 255, 255, 0.8); }
-    .chart-card:hover {
-      border-color: rgba(6, 182, 212, 0.4);
-      box-shadow: var(--shadow-hover);
-    }
-    .chart-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 16px;
-    }
-    .chart-header h3 {
-      font-size: 15px; font-weight: 700;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .chart-body {
+    /* Notifications Bell */
+    .notif-bell-wrap {
       position: relative;
-      height: 250px;
+      display: inline-flex;
     }
-    .chart-full .chart-body { height: 320px; }
-
-    /* Leaderboard */
-    .leaderboard-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
-    }
-    .leaderboard-header h3 {
-      font-size: 18px; display: flex; align-items: center; gap: 8px;
-    }
-    .leaderboard-tabs {
-      display: flex; gap: 6px;
-      background: rgba(30, 41, 59, 0.5);
-      padding: 4px; border-radius: 10px;
-    }
-    body.light-mode .leaderboard-tabs { background: rgba(241, 245, 249, 0.8); }
-    .lb-tab {
-      padding: 8px 16px; border: none; background: transparent;
-      color: var(--gray); font-family: inherit;
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      border-radius: 8px; transition: all 0.2s;
-    }
-    .lb-tab:hover { color: var(--light); }
-    .lb-tab.active {
-      background: var(--gradient); color: white;
-      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
-    }
-    .leaderboard-list { display: grid; gap: 10px; }
-    .lb-item {
-      display: flex; align-items: center; gap: 14px;
-      padding: 14px 18px;
-      background: rgba(30, 41, 59, 0.5);
-      border-radius: var(--radius-sm);
-      border: 2px solid transparent;
-      transition: all 0.3s;
-      cursor: pointer;
-    }
-    body.light-mode .lb-item { background: rgba(241, 245, 249, 0.7); }
-    .lb-item:hover {
-      transform: translateX(-4px);
-      border-color: rgba(6, 182, 212, 0.4);
-    }
-    .lb-item.top-1 {
-      border-color: var(--gold);
-      background: rgba(251, 191, 36, 0.08);
-      box-shadow: 0 4px 20px rgba(251, 191, 36, 0.2);
-    }
-    .lb-item.top-2 {
-      border-color: var(--silver);
-      background: rgba(203, 213, 225, 0.08);
-    }
-    .lb-item.top-3 {
-      border-color: var(--bronze);
-      background: rgba(217, 119, 6, 0.08);
-    }
-    .lb-rank {
-      width: 36px; height: 36px;
+    .notif-bell {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: var(--cyan);
       display: flex; align-items: center; justify-content: center;
-      font-size: 20px; font-weight: 700;
-      flex-shrink: 0;
+      font-size: 18px; cursor: pointer; transition: all 0.3s;
+      position: relative;
     }
-    .lb-info { flex: 1; min-width: 0; }
-    .lb-name {
-      font-size: 15px; font-weight: 700; margin-bottom: 2px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    .notif-bell:hover {
+      background: var(--gradient); color: white;
     }
-    .lb-meta { font-size: 11px; color: var(--gray); }
-    .lb-score {
-      font-size: 20px; font-weight: 800;
-      background: var(--gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      flex-shrink: 0;
+    .notif-badge {
+      position: absolute;
+      top: -4px; left: -4px;
+      min-width: 20px; height: 20px;
+      padding: 0 6px;
+      background: var(--danger);
+      color: white;
+      border-radius: 10px;
+      font-size: 11px; font-weight: 700;
+      display: none;
+      align-items: center; justify-content: center;
+      border: 2px solid var(--dark-2);
+      animation: pulse 2s infinite;
     }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .notif-panel {
+      position: absolute;
+      top: 55px; left: 0;
+      width: 360px;
+      max-height: 500px;
+      background: var(--dark-2);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 16px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+      overflow: hidden;
+      display: none;
+      z-index: 999;
+      flex-direction: column;
+    }
+    .notif-panel.active { display: flex; }
+    .notif-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(6, 182, 212, 0.15);
+    }
+    .notif-header h4 { font-size: 15px; }
+    .notif-list {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 420px;
+    }
+    .notif-item {
+      display: flex; gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(6, 182, 212, 0.08);
+      border-right: 4px solid transparent;
+      transition: all 0.2s;
+    }
+    .notif-item:hover { background: rgba(6, 182, 212, 0.05); }
+    .notif-item.unread { font-weight: 600; }
+    .notif-icon { font-size: 22px; flex-shrink: 0; }
+    .notif-content { flex: 1; min-width: 0; }
+    .notif-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .notif-message { font-size: 12px; color: var(--gray); line-height: 1.5; }
+    .notif-time { font-size: 11px; color: var(--gray-2); margin-top: 4px; }
 
-    /* Export buttons */
-    .export-grid {
+    /* Badges */
+    .badges-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 12px;
     }
-    .export-btn {
-      display: flex; align-items: center; gap: 14px;
-      padding: 16px 20px;
+    .badge-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 2px solid var(--badge-color, #06b6d4);
+      border-radius: 14px;
+      padding: 16px 12px;
+      text-align: center;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .badge-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--badge-color, #06b6d4), transparent);
+      opacity: 0.08;
+    }
+    .badge-card:hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 12px 32px rgba(6, 182, 212, 0.3);
+    }
+    .badge-card.locked {
+      opacity: 0.4;
+      filter: grayscale(1);
+    }
+    .badge-icon-big { font-size: 36px; margin-bottom: 8px; position: relative; }
+    .badge-name-big { font-size: 12px; font-weight: 700; position: relative; }
+    .badge-date { font-size: 10px; color: var(--gray); margin-top: 4px; position: relative; }
+    .badge-item {
+      text-align: center;
+      padding: 10px;
+      background: rgba(6, 182, 212, 0.08);
+      border-radius: 10px;
+    }
+    .badge-item .badge-icon { font-size: 28px; }
+    .badge-item .badge-name { font-size: 11px; margin-top: 4px; }
+
+    .badges-empty {
+      text-align: center;
+      padding: 30px 20px;
+    }
+    .badges-complete {
+      text-align: center;
+      padding: 20px;
+      background: rgba(16, 185, 129, 0.1);
+      border-radius: 12px;
+      color: var(--emerald);
+      font-weight: 700;
+    }
+
+    /* Feed */
+    .badges-feed { display: grid; gap: 10px; }
+    .badge-feed-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px;
       background: rgba(30, 41, 59, 0.5);
-      border: 2px solid rgba(6, 182, 212, 0.2);
       border-radius: var(--radius-sm);
-      cursor: pointer; font-family: inherit;
-      color: var(--light);
-      transition: all 0.3s; text-align: right;
+      border-right: 3px solid var(--gold);
     }
-    body.light-mode .export-btn { background: rgba(241, 245, 249, 0.8); }
-    .export-btn:hover {
-      border-color: var(--cyan);
+    body.light-mode .badge-feed-item { background: rgba(241, 245, 249, 0.8); }
+    .badge-feed-content { flex: 1; min-width: 0; }
+    .badge-feed-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+    .badge-feed-text { font-size: 12px; color: var(--gray); }
+    .badge-feed-time { font-size: 11px; color: var(--gray-2); flex-shrink: 0; }
+
+    /* Auto-complete */
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-suggestions {
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      background: var(--dark-2);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 10px;
+      margin-top: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .autocomplete-suggestions.active { display: block; }
+    .autocomplete-item {
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.15s;
+    }
+    .autocomplete-item:hover {
       background: rgba(6, 182, 212, 0.1);
-      transform: translateY(-2px);
     }
-    .export-icon { font-size: 28px; }
-    .export-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
-    .export-desc { font-size: 11px; color: var(--gray); }
+    .autocomplete-hint {
+      font-size: 11px;
+      color: var(--cyan);
+      margin-top: 6px;
+    }
 
     @media (max-width: 640px) {
       .admin-header { padding: 12px 16px; }
       .section-card { padding: 18px; }
       .action-bar .form-select { width: 100%; }
-      .charts-grid { grid-template-columns: 1fr; }
-      .chart-full { grid-column: auto; }
-      .chart-body { height: 220px; }
-      .chart-full .chart-body { height: 250px; }
+      .notif-panel {
+        position: fixed;
+        top: 70px; right: 12px; left: 12px;
+        width: auto;
+        max-height: 70vh;
+      }
     }
   </style>
 </head>
@@ -263,9 +309,20 @@
         <span class="role-badge super" id="roleBadge">سوپر ادمین</span>
       </div>
       <div class="admin-actions">
+        <div class="notif-bell-wrap">
+          <button class="notif-bell" id="notifBell" onclick="toggleNotificationPanel()">🔔</button>
+          <span class="notif-badge" id="notifBadge">0</span>
+          <div class="notif-panel" id="notifPanel">
+            <div class="notif-header">
+              <h4>🔔 اعلان‌ها</h4>
+              <button class="btn btn-ghost btn-small" onclick="markAllAsRead()">خوانده شد</button>
+            </div>
+            <div class="notif-list" id="notifList"></div>
+          </div>
+        </div>
         <button class="btn btn-icon" id="themeToggle" title="تغییر تم">🌙</button>
-        <a href="index.html" class="btn btn-ghost">🏠 صفحه اصلی</a>
-        <button class="btn btn-danger" id="logoutBtn">🚪 خروج</button>
+        <a href="index.html" class="btn btn-ghost">🏠</a>
+        <button class="btn btn-danger" id="logoutBtn">🚪</button>
       </div>
     </header>
 
@@ -278,8 +335,9 @@
       <button class="tab-btn" data-tab="attendance">✅ ثبت حضور</button>
       <button class="tab-btn" data-tab="manual">📝 امتیاز متفرقه</button>
       <button class="tab-btn" data-tab="sessions">📚 جلسات</button>
-      <button class="tab-btn" data-tab="history">🕐 تاریخچه حضور</button>
-      <button class="tab-btn" data-tab="audit">📜 گزارش فعالیت</button>
+      <button class="tab-btn" data-tab="badges">🏅 نشان‌ها</button>
+      <button class="tab-btn" data-tab="history">🕐 تاریخچه</button>
+      <button class="tab-btn" data-tab="audit">📜 فعالیت‌ها</button>
       <button class="tab-btn" data-tab="admins" id="adminsTab">🔑 ادمین‌ها</button>
     </div>
 
@@ -291,7 +349,7 @@
       <div class="section-card" id="leaderboardSection"></div>
       <div id="exportButtons"></div>
       <div class="section-card">
-        <div class="section-header"><h3>🕐 آخرین امتیازهای ثبت‌شده</h3></div>
+        <div class="section-header"><h3>🕐 آخرین امتیازها</h3></div>
         <div id="recentScores"></div>
       </div>
     </div>
@@ -321,7 +379,7 @@
           <select class="form-select" id="filterGroup" onchange="renderStudents()">
             <option value="">همه گروه‌ها</option>
           </select>
-          <input type="text" class="form-input" style="flex:1;min-width:200px;" id="studentSearch" placeholder="🔍 جستجو در اسم..." oninput="renderStudents()">
+          <input type="text" class="form-input" style="flex:1;min-width:200px;" id="studentSearch" placeholder="🔍 جستجو..." oninput="renderStudents()">
         </div>
         <div id="studentsList"></div>
       </div>
@@ -332,20 +390,16 @@
       <div class="section-card">
         <div class="section-header">
           <h3>📥 ورودی هوشمند اکسل</h3>
-          <button class="btn btn-primary" onclick="downloadSampleFile()">
-            ⬇️ دانلود فایل نمونه
-          </button>
+          <button class="btn btn-primary" onclick="downloadSampleFile()">⬇️ دانلود نمونه</button>
         </div>
-
         <p style="color:var(--gray);font-size:13px;margin-bottom:20px;line-height:1.8;">
           🎯 <b>روش کار:</b><br>
-          ۱. فایل نمونه رو دانلود کن (ستون گروه‌ها خودکار پر می‌شه)<br>
+          ۱. فایل نمونه رو دانلود کن<br>
           ۲. توی Excel بازش کن و اطلاعات رو پر کن<br>
-          ۳. برای عضویت تو گروه، یه علامت (✓ یا 1 یا x یا بله) بذار<br>
+          ۳. برای عضویت تو گروه، علامت (✓ یا 1 یا بله) بذار<br>
           ۴. فایل رو ذخیره کن<br>
           ۵. اینجا آپلود کن
         </p>
-
         <div id="importZone">
           <div id="dropZone" style="
             border: 3px dashed rgba(6,182,212,0.4);
@@ -358,19 +412,15 @@
           ">
             <div style="font-size: 64px; margin-bottom: 16px; opacity: 0.7;">📁</div>
             <h3 style="font-size: 18px; margin-bottom: 8px;">فایل رو اینجا بکش و رها کن</h3>
-            <p style="color: var(--gray); font-size: 13px; margin-bottom: 12px;">
-              یا کلیک کن برای انتخاب فایل
-            </p>
+            <p style="color: var(--gray); font-size: 13px; margin-bottom: 12px;">یا کلیک کن</p>
             <div style="display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
               <span class="role-badge admin">📄 CSV</span>
-              <span class="role-badge admin">📊 XLSX / XLS</span>
+              <span class="role-badge admin">📊 XLSX</span>
             </div>
           </div>
           <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;">
         </div>
-
         <div id="importPreview" style="display: none;"></div>
-
       </div>
     </div>
 
@@ -379,24 +429,21 @@
       <div class="section-card">
         <div class="section-header">
           <h3>✅ ثبت حضور (۵۰ امتیاز)</h3>
-          <span class="counter-badge" id="attCounter">۰ نفر انتخاب شده</span>
+          <span class="counter-badge" id="attCounter">۰ نفر</span>
         </div>
-
         <div class="action-bar">
           <select class="form-select" id="attGroup" onchange="renderAttendance()">
             <option value="">انتخاب گروه...</option>
           </select>
-          <input type="text" class="form-input" style="flex:1;min-width:200px;" id="attSessionTitle" placeholder="📚 عنوان جلسه (مثلاً: قصه‌های قرآنی)">
+          <input type="text" class="form-input" style="flex:1;min-width:200px;" id="attSessionTitle" placeholder="📚 عنوان جلسه">
           <button class="btn btn-ghost btn-small" onclick="selectAllAttendance()">همه</button>
           <button class="btn btn-ghost btn-small" onclick="deselectAllAttendance()">هیچ‌کدام</button>
         </div>
-
         <div class="attendance-list" id="attendanceList"></div>
-
         <div style="margin-top:20px;">
           <div class="form-group">
-            <label class="form-label">📝 توضیحات / دلیل (اختیاری)</label>
-            <textarea class="form-textarea" id="attReason" placeholder="مثلاً: جلسه هفتگی، حضور فعال..."></textarea>
+            <label class="form-label">📝 توضیحات (اختیاری)</label>
+            <textarea class="form-textarea" id="attReason" placeholder="مثلاً: جلسه هفتگی..."></textarea>
           </div>
           <button class="btn btn-primary" style="width:100%;" onclick="submitAttendance()">
             ✅ ثبت حضور و افزودن ۵۰ امتیاز
@@ -409,37 +456,35 @@
     <div class="tab-content" id="tab-manual">
       <div class="section-card">
         <div class="section-header"><h3>📝 ثبت امتیاز متفرقه</h3></div>
-
         <div class="form-group">
           <label class="form-label">🔍 جستجوی دانش‌آموز</label>
-          <input type="text" class="form-input" id="manualSearch" placeholder="اسم دانش‌آموز رو تایپ کن..." oninput="searchManualStudent()">
+          <input type="text" class="form-input" id="manualSearch" placeholder="اسم دانش‌آموز..." oninput="searchManualStudent()">
         </div>
-
         <div id="manualSearchResults"></div>
-
         <div id="manualSelectedBox" style="display:none;margin-top:20px;">
           <div class="profile-hero" style="padding:20px;">
             <div class="profile-avatar" id="manualAvatar" style="width:60px;height:60px;font-size:24px;">؟</div>
             <div class="profile-name" style="font-size:18px;" id="manualName">-</div>
             <div class="profile-group" id="manualGroup">-</div>
           </div>
-
           <div class="grid-2">
             <div class="form-group">
               <label class="form-label">💯 مقدار امتیاز</label>
               <input type="number" class="form-input" id="manualAmount" placeholder="مثلاً: 20 یا -5">
+              <div class="autocomplete-hint" id="amountHint"></div>
             </div>
             <div class="form-group">
               <label class="form-label">📚 عنوان جلسه (اختیاری)</label>
-              <input type="text" class="form-input" id="manualSession" placeholder="مثلاً: مسابقه قرآنی">
+              <input type="text" class="form-input" id="manualSession" placeholder="مسابقه قرآنی">
             </div>
           </div>
-
           <div class="form-group">
             <label class="form-label">📝 دلیل</label>
-            <textarea class="form-textarea" id="manualReason" placeholder="مثلاً: پاسخ صحیح به سوال..."></textarea>
+            <div class="autocomplete-wrap">
+              <textarea class="form-textarea" id="manualReason" placeholder="مثلاً: پاسخ صحیح به سوال..." oninput="showReasonSuggestions(this.value)"></textarea>
+              <div class="autocomplete-suggestions" id="reasonSuggestions"></div>
+            </div>
           </div>
-
           <button class="btn btn-primary" style="width:100%;" onclick="submitManualScore()">💾 ثبت امتیاز</button>
         </div>
       </div>
@@ -452,39 +497,48 @@
           <h3>📚 مدیریت جلسات</h3>
           <div style="display:flex;gap:8px;">
             <button class="btn btn-ghost" onclick="exportSessions()">📄 Excel</button>
-            <button class="btn btn-primary" onclick="openSessionForm()">➕ جلسه جدید</button>
+            <button class="btn btn-primary" onclick="openSessionForm()">➕ جدید</button>
           </div>
         </div>
         <div id="sessionsList"></div>
       </div>
     </div>
 
-    <!-- تاریخچه حضور -->
-    <div class="tab-content" id="tab-history">
+    <!-- نشان‌ها 🆕 -->
+    <div class="tab-content" id="tab-badges">
       <div class="section-card">
         <div class="section-header">
-          <h3>🕐 تاریخچه ثبت حضور</h3>
+          <h3>🏅 نشان‌های اهدا شده</h3>
+          <button class="btn btn-ghost btn-small" onclick="renderAllBadgesOverview('badgesOverview')">🔄 بروزرسانی</button>
         </div>
+        <p style="color:var(--gray);font-size:13px;margin-bottom:16px;">
+          آخرین نشان‌های گرفته‌شده توسط دانش‌آموزان
+        </p>
+        <div id="badgesOverview"></div>
+      </div>
+    </div>
+
+    <!-- تاریخچه -->
+    <div class="tab-content" id="tab-history">
+      <div class="section-card">
+        <div class="section-header"><h3>🕐 تاریخچه ثبت حضور</h3></div>
         <div class="action-bar">
           <select class="form-select" id="historyGroupFilter" onchange="renderHistory()">
             <option value="">همه گروه‌ها</option>
           </select>
-          <input type="text" class="form-input" style="flex:1;min-width:200px;" id="historySearch" placeholder="🔍 جستجو در عنوان جلسه..." oninput="renderHistory()">
+          <input type="text" class="form-input" style="flex:1;min-width:200px;" id="historySearch" placeholder="🔍 جستجو..." oninput="renderHistory()">
         </div>
         <div id="historyList"></div>
       </div>
     </div>
 
-    <!-- گزارش فعالیت‌ها -->
+    <!-- فعالیت‌ها -->
     <div class="tab-content" id="tab-audit">
       <div class="section-card">
         <div class="section-header">
-          <h3>📜 گزارش فعالیت‌های ادمین‌ها</h3>
-          <button class="btn btn-ghost btn-small" onclick="renderAuditLog()">🔄 بروزرسانی</button>
+          <h3>📜 گزارش فعالیت‌ها</h3>
+          <button class="btn btn-ghost btn-small" onclick="renderAuditLog()">🔄</button>
         </div>
-        <p style="color:var(--gray);font-size:13px;margin-bottom:16px;">
-          آخرین ۵۰ فعالیت ادمین‌ها در سایت
-        </p>
         <div id="auditList"></div>
       </div>
     </div>
@@ -494,7 +548,7 @@
       <div class="section-card">
         <div class="section-header">
           <h3>🔑 مدیریت ادمین‌ها</h3>
-          <button class="btn btn-primary" id="addAdminBtn" onclick="openAdminForm()">➕ ادمین جدید</button>
+          <button class="btn btn-primary" onclick="openAdminForm()">➕ ادمین جدید</button>
         </div>
         <div id="adminsList"></div>
       </div>
@@ -502,7 +556,7 @@
 
   </div>
 
-  <!-- مودال عمومی -->
+  <!-- مودال -->
   <div class="modal-overlay" id="mainModal">
     <div class="modal">
       <div class="modal-header">
@@ -519,5 +573,7 @@
   <script src="ai-engine.js"></script>
   <script src="dashboard.js"></script>
   <script src="export.js"></script>
+  <script src="notifications.js"></script>
+  <script src="badges.js"></script>
 </body>
-        </html>
+</html>
