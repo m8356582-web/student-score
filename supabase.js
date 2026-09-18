@@ -1,5 +1,5 @@
 /* ============================================
-   اتصال به Supabase + توابع دیتابیس (نسخه امنیتی)
+   اتصال به Supabase + توابع دیتابیس
    ============================================ */
 
 const SUPABASE_URL = 'https://jbbrvrldxsrknensbkzd.supabase.co';
@@ -9,7 +9,7 @@ const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ============================================
-   🔐 Auth - مدیریت امن لاگین با توکن
+   🔐 Auth - مدیریت امن لاگین
    ============================================ */
 const Auth = {
   TOKEN_KEY: 'auth_token',
@@ -43,7 +43,6 @@ const Auth = {
     return !!this.getToken();
   },
 
-  // لاگین امن از طریق RPC
   async login(phone, password) {
     try {
       const { data, error } = await db.rpc('login_admin', {
@@ -62,7 +61,6 @@ const Auth = {
     }
   },
 
-  // چک کردن اعتبار توکن
   async verify() {
     const token = this.getToken();
     if (!token) return false;
@@ -77,7 +75,6 @@ const Auth = {
     }
   },
 
-  // چک کردن توکن قبل از هر عملیات
   requireToken() {
     const token = this.getToken();
     if (!token) {
@@ -643,4 +640,4 @@ function requireAdmin() {
     return null;
   }
   return admin;
-         }
+}
