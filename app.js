@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /* ============================================
-   تم روشن/تاریک
+   تم
    ============================================ */
 function initTheme() {
   const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -178,7 +178,7 @@ async function doSearch(query) {
 }
 
 /* ============================================
-   پروفایل
+   پروفایل دانش‌آموز
    ============================================ */
 async function showProfile(studentId) {
   const modal = document.getElementById('profileModal');
@@ -198,6 +198,36 @@ async function showProfile(studentId) {
     const groupsText = groups.length > 0
       ? groups.map(g => g.name).join(' • ')
       : 'بدون گروه';
+
+    // گرفتن نشان‌ها (اگه badges.js لود شده)
+    let badgesHTML = '';
+    if (typeof getAllBadgesForStudent === 'function') {
+      try {
+        const badges = await getAllBadgesForStudent(studentId);
+        const earned = badges.filter(b => b.earned);
+
+        if (earned.length > 0) {
+          badgesHTML = `
+            <div style="margin-top:20px;">
+              <h3 class="section-title">🏅 نشان‌ها (${earned.length})</h3>
+              <div class="badges-grid">
+                ${badges.map(b => `
+                  <div class="badge-item ${b.earned ? 'earned' : 'locked'}" title="${b.description}">
+                    <div class="badge-icon" style="filter: ${b.earned ? 'none' : 'grayscale(1) opacity(0.3)'};">
+                      ${b.icon}
+                    </div>
+                    <div class="badge-title">${b.title}</div>
+                    ${b.earned ? '<div class="badge-check">✓</div>' : '<div class="badge-lock">🔒</div>'}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+      } catch (e) {
+        console.warn('خطا در نشان‌ها:', e);
+      }
+    }
 
     const scoreHTML = scores.length === 0
       ? `<div class="no-result">هنوز امتیازی ثبت نشده</div>`
@@ -233,6 +263,8 @@ async function showProfile(studentId) {
         <div class="total-score-label">امتیاز کل</div>
         ${attendance.length > 0 ? `<div style="margin-top:12px;font-size:13px;color:var(--gray);">✅ حضور در ${attendance.length} جلسه</div>` : ''}
       </div>
+
+      ${badgesHTML}
 
       <h3 class="section-title" style="margin-top:20px;">📊 تاریخچه امتیازات</h3>
       <div>${scoreHTML}</div>
