@@ -19,9 +19,7 @@ async function renderSmartAnalysis() {
       Sessions.getAll()
     ]);
 
-    // ============================================
-    // ۱. آمار امروز
-    // ============================================
+    // آمار امروز
     const today = new Date().toISOString().split('T')[0];
     const todayScores = recentScores.filter(s =>
       s.created_at && s.created_at.startsWith(today)
@@ -29,9 +27,7 @@ async function renderSmartAnalysis() {
     const todayStudents = new Set(todayScores.map(s => s.student_id)).size;
     const todayTotal = todayScores.reduce((sum, s) => sum + s.amount, 0);
 
-    // ============================================
-    // ۲. آمار دیروز (برای مقایسه)
-    // ============================================
+    // آمار دیروز
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
     const yesterdayScores = recentScores.filter(s =>
       s.created_at && s.created_at.startsWith(yesterday)
@@ -43,24 +39,16 @@ async function renderSmartAnalysis() {
       percentChange = Math.round(((todayTotal - yesterdayTotal) / yesterdayTotal) * 100);
     }
 
-    // ============================================
-    // ۳. تشخیص Streak (حضور پیاپی)
-    // ============================================
+    // Streak
     const streaks = detectStreaks(recentScores);
 
-    // ============================================
-    // ۴. هشدارها
-    // ============================================
+    // هشدارها
     const alerts = generateAlerts(students, groups, recentScores);
 
-    // ============================================
-    // ۵. پیشنهادها
-    // ============================================
+    // پیشنهادها
     const suggestions = generateSuggestions(students, groups, sessions);
 
-    // ============================================
-    // ۶. گروه فعال
-    // ============================================
+    // گروه فعال
     let topGroup = null;
     let topGroupScore = 0;
     groups.forEach(g => {
@@ -72,13 +60,8 @@ async function renderSmartAnalysis() {
       }
     });
 
-    // ============================================
-    // رندر
-    // ============================================
     container.innerHTML = `
       <div class="smart-grid">
-
-        <!-- کارت ۱: آمار امروز -->
         <div class="smart-card">
           <div class="smart-card-header">
             <span class="smart-card-icon">📊</span>
@@ -97,7 +80,6 @@ async function renderSmartAnalysis() {
           </div>
         </div>
 
-        <!-- کارت ۲: گروه فعال -->
         <div class="smart-card">
           <div class="smart-card-header">
             <span class="smart-card-icon">🏆</span>
@@ -106,14 +88,13 @@ async function renderSmartAnalysis() {
           <div class="smart-card-body">
             ${topGroup ? `
               <div class="smart-stat-big" style="font-size:18px;">${topGroup.name}</div>
-              <div class="smart-stat-label">مجموع امتیاز گروه</div>
+              <div class="smart-stat-label">مجموع امتیاز</div>
               <div class="smart-stat-divider"></div>
               <div class="smart-stat-small">⭐ ${topGroupScore.toLocaleString('fa-IR')} امتیاز</div>
             ` : '<div class="no-result">گروهی یافت نشد</div>'}
           </div>
         </div>
 
-        <!-- کارت ۳: Streak -->
         <div class="smart-card">
           <div class="smart-card-header">
             <span class="smart-card-icon">🔥</span>
@@ -132,7 +113,6 @@ async function renderSmartAnalysis() {
           </div>
         </div>
 
-        <!-- کارت ۴: هشدارها -->
         <div class="smart-card ${alerts.length > 0 ? 'warning' : ''}">
           <div class="smart-card-header">
             <span class="smart-card-icon">⚠️</span>
@@ -152,7 +132,6 @@ async function renderSmartAnalysis() {
           </div>
         </div>
 
-        <!-- کارت ۵: پیشنهادها -->
         <div class="smart-card">
           <div class="smart-card-header">
             <span class="smart-card-icon">💡</span>
@@ -167,7 +146,6 @@ async function renderSmartAnalysis() {
             `).join('')}
           </div>
         </div>
-
       </div>
     `;
 
@@ -178,7 +156,7 @@ async function renderSmartAnalysis() {
 }
 
 /* ============================================
-   تشخیص Streak (حضور پیاپی)
+   تشخیص Streak
    ============================================ */
 function detectStreaks(recentScores) {
   const attendanceByStudent = {};
@@ -200,15 +178,13 @@ function detectStreaks(recentScores) {
     const records = attendanceByStudent[sid];
     if (records.length < 2) return;
 
-    // مرتب بر اساس زمان (جدید به قدیم)
     records.sort((a, b) => b.time - a.time);
 
-    // شمارش پیاپی
     let count = 1;
     for (let i = 1; i < records.length; i++) {
       const diff = records[i - 1].time - records[i].time;
       const hoursDiff = diff / (1000 * 60 * 60);
-      if (hoursDiff < 72) { // کمتر از ۳ روز فاصله
+      if (hoursDiff < 72) {
         count++;
       } else {
         break;
@@ -233,7 +209,6 @@ function detectStreaks(recentScores) {
 function generateAlerts(students, groups, recentScores) {
   const alerts = [];
 
-  // ۱. دانش‌آموزان بدون گروه
   const noGroup = students.filter(s => !s.groups || s.groups.length === 0);
   if (noGroup.length > 0) {
     alerts.push({
@@ -243,7 +218,6 @@ function generateAlerts(students, groups, recentScores) {
     });
   }
 
-  // ۲. گروه‌های خالی
   const emptyGroups = groups.filter(g => {
     const count = students.filter(s => s.groups?.some(sg => sg.id === g.id)).length;
     return count === 0;
@@ -256,21 +230,16 @@ function generateAlerts(students, groups, recentScores) {
     });
   }
 
-  // ۳. دانش‌آموزان با امتیاز صفر
   const zeroScore = students.filter(s => (s.total_score || 0) === 0 && s.groups?.length > 0);
   if (zeroScore.length > 0) {
     alerts.push({
       severity: 'info',
       icon: '0️⃣',
-      text: `${zeroScore.length} نفر امتیاز صفر دارن`
+      text: `${zeroScore.length} نفر امتیاز صفر`
     });
   }
 
-  // ۴. گروه‌های بدون جلسه اخیر
   const now = Date.now();
-  const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
-
-  // ۵. دانش‌آموزانی که ۲ هفته غایب بودن
   const twoWeeksAgo = now - (14 * 24 * 60 * 60 * 1000);
   const attendanceStudents = new Set(
     recentScores
@@ -288,7 +257,7 @@ function generateAlerts(students, groups, recentScores) {
     alerts.push({
       severity: 'warning',
       icon: '😴',
-      text: `${longAbsent.length} نفر ۲ هفته غایب بودن`
+      text: `${longAbsent.length} نفر ۲ هفته غایب`
     });
   }
 
@@ -301,21 +270,16 @@ function generateAlerts(students, groups, recentScores) {
 function generateSuggestions(students, groups, sessions) {
   const suggestions = [];
   const now = new Date();
-  const dayOfWeek = now.getDay(); // 0=یکشنبه ... 6=شنبه
-  const hour = now.getHours();
+  const dayOfWeek = now.getDay();
 
-  // ۱. پیشنهاد جلسه بر اساس روز هفته
-  const dayNames = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'];
-  if (dayOfWeek === 5) { // جمعه
+  if (dayOfWeek === 5) {
     suggestions.push({ icon: '📚', text: 'امروز جمعه‌ست، یه جلسه خوبه!' });
   }
 
-  // ۲. اگر تعداد دانش‌آموزان بیشتر از گروه‌هاست
   if (groups.length < 3 && students.length > 20) {
-    suggestions.push({ icon: '📁', text: 'گروه‌های بیشتری بساز تا مدیریت راحت‌تر بشه' });
+    suggestions.push({ icon: '📁', text: 'گروه‌های بیشتری بساز' });
   }
 
-  // ۳. اگر گروهی بدون اعضاست
   const emptyGroups = groups.filter(g => {
     const count = students.filter(s => s.groups?.some(sg => sg.id === g.id)).length;
     return count === 0;
@@ -324,7 +288,6 @@ function generateSuggestions(students, groups, sessions) {
     suggestions.push({ icon: '👥', text: `به گروه "${emptyGroups[0].name}" اعضا اضافه کن` });
   }
 
-  // ۴. اگر ۳ روز هیچ جلسه‌ای نبوده
   if (sessions.length > 0) {
     const lastSession = sessions[0];
     const daysSince = Math.floor((now - new Date(lastSession.session_date).getTime()) / (1000 * 60 * 60 * 24));
@@ -332,16 +295,14 @@ function generateSuggestions(students, groups, sessions) {
       suggestions.push({ icon: '📅', text: `${daysSince} روزه جلسه‌ای نداشتی` });
     }
   } else {
-    suggestions.push({ icon: '🎯', text: 'اولین جلسه‌ت رو بساز و شروع کن!' });
+    suggestions.push({ icon: '🎯', text: 'اولین جلسه‌ت رو بساز!' });
   }
 
-  // ۵. اگر اسامی بدون امتیاز زیادن
   const zeroScore = students.filter(s => (s.total_score || 0) === 0);
   if (zeroScore.length > 10) {
-    suggestions.push({ icon: '💯', text: 'به دانش‌آموزان جدید امتیاز بده تا فعال بشن' });
+    suggestions.push({ icon: '💯', text: 'به دانش‌آموزان جدید امتیاز بده' });
   }
 
-  // ۶. اگه همه چی خوبه
   if (suggestions.length === 0) {
     suggestions.push({ icon: '✨', text: 'همه چی مرتبه! ادامه بده' });
   }
@@ -350,19 +311,15 @@ function generateSuggestions(students, groups, sessions) {
 }
 
 /* ============================================
-   تشخیص هوشمند دکمه Enter برای فرم‌ها
+   Command Palette (Ctrl+K)
    ============================================ */
 document.addEventListener('keydown', (e) => {
-  // Ctrl+K = کامند پالت (بعداً)
   if (e.ctrlKey && e.key === 'k') {
     e.preventDefault();
     openCommandPalette();
   }
 });
 
-/* ============================================
-   کامند پالت ساده (بدون کتابخانه)
-   ============================================ */
 function openCommandPalette() {
   let modal = document.getElementById('cmdPalette');
   if (!modal) {
@@ -374,7 +331,7 @@ function openCommandPalette() {
         <div class="cmd-palette-input-wrap">
           <span style="font-size:20px;">🔍</span>
           <input type="text" id="cmdInput" placeholder="جستجو در دانش‌آموزان، گروه‌ها، جلسات..." autofocus>
-          <span class="cmd-hint">Esc برای بستن</span>
+          <span class="cmd-hint">Esc</span>
         </div>
         <div class="cmd-results" id="cmdResults"></div>
       </div>
@@ -459,7 +416,6 @@ function renderCommandResults(query, results) {
   const container = document.getElementById('cmdResults');
   if (!container) return;
 
-  // دستورات ثابت
   const commands = [
     { icon: '👥', title: 'رفتن به دانش‌آموزان', action: () => { switchTab('students'); closeCommandPalette(); } },
     { icon: '📁', title: 'رفتن به گروه‌ها', action: () => { switchTab('groups'); closeCommandPalette(); } },
@@ -473,12 +429,15 @@ function renderCommandResults(query, results) {
     container.innerHTML = `
       <div class="cmd-section-title">دستورات سریع</div>
       ${commands.map((c, i) => `
-        <div class="cmd-item" data-idx="${i}" onclick='(${c.action.toString()})()'>
+        <div class="cmd-item" data-cmd="${i}">
           <span class="cmd-item-icon">${c.icon}</span>
           <span class="cmd-item-title">${c.title}</span>
         </div>
       `).join('')}
     `;
+    container.querySelectorAll('.cmd-item').forEach((el, i) => {
+      el.addEventListener('click', commands[i].action);
+    });
     return;
   }
 
@@ -497,7 +456,6 @@ function renderCommandResults(query, results) {
     </div>
   `).join('');
 
-  // رویدادها
   container.querySelectorAll('.cmd-item').forEach((el, i) => {
     el.addEventListener('click', () => results[i].action());
   });
@@ -507,14 +465,3 @@ function switchTab(tabName) {
   const tab = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
   if (tab) tab.click();
 }
-
-/* ============================================
-   راه‌اندازی
-   ============================================ */
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    if (document.getElementById('smartAnalysis')) {
-      renderSmartAnalysis();
-    }
-  }, 800);
-});
