@@ -1,971 +1,433 @@
-﻿/* ============================================
-   منطق پنل ادمین (admin.html)
+/* ============================================
+   📊 داشبورد تحلیلی + نمودارها + Leaderboard
    ============================================ */
 
-let currentAdmin = null;
-let allGroupsCache = [];
-let allStudentsCache = [];
-let selectedAttendance = new Set();
-let manualSelectedStudent = null;
+let trendChart = null;
+let typeChart = null;
+let groupChart = null;
+let leaderboardPeriod = 'all';
+
+/* ============================================
+   راه‌اندازی نمودارها
+   ============================================ */
+async function renderCharts() {
+  const container = document.getElementById('chartsSection');
+  if (!container) return;
+
+  container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
+
+  try {
+    const token = Auth.getToken();
+    if (!token) return;
+
+    const { data, error } = await db.rpc('get_dashboard_stats', { p_token: token });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+
+    const stats = data.stats;
+    const trend = data.daily_trend || [];
+    const types = data.score_types || [];
+
+    // گرفتن گروه‌ها برای نمودار مقایسه
+    const [groups, students] = await Promise.all([
+      Groups.getAll(),
+      Students.getAllWithGroups()
+    ]);
+
+    // ساخت داده‌های گروه‌ها
+    const groupData = groups.map(g => {
+      const groupStudents = students.filter(s => s.groups.some(sg => sg.id === g.id));
+      const totalScore = groupStudents.reduce((sum, s) => sum + (s.total_score || 0), 0);
+      return {
+        name: g.name,
+        count: groupStudents.length,
+        total: totalScore
+      };
+    }).sort((a, b) => b.total - a.total).slice(0, 8);
+
+    container.innerHTML = `
+      <div class="charts-grid">
+        <div class="chart-card chart-full">
+          <div class="chart-header">
+            <h3>📈 روند امتیاز ۳۰ روز اخیر</h3>
+          </div>
+          <div class="chart-body">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>🍩 توزیع نوع امتیازها</h3>
+          </div>
+          <div class="chart-body">
+            <canvas id="typeChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>📊 مقایسه گروه‌ها (امتیاز کل)</h3>
+          </div>
+          <div class="chart-body">
+            <canvas id="groupChart"></canvas>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // رندر نمودارها
+    renderTrendChart(trend);
+    renderTypeChart(types);
+    renderGroupChart(groupData);
+
+  } catch (err) {
+    console.error('خطا در نمودارها:', err);
+    container.innerHTML = '<div class="no-result">خطا در بارگذاری نمودارها</div>';
+  }
+}
+
+/* ============================================
+   نمودار خطی (روند)
+   ============================================ */
+function renderTrendChart(trend) {
+  const canvas = document.getElementById('trendChart');
+  if (!canvas) return;
+
+  if (trendChart) trendChart.destroy();
+
+  // ساخت ۳۰ روز اخیر
+  const days = [];
+  const dailyTotals = [];
+  const dailyStudents = [];
+
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+
+    const found = trend.find(t => t.day === dateStr);
+    days.push(toJalali(dateStr).split(' ').slice(0, 2).join(' '));
+    dailyTotals.push(found ? Number(found.daily_total) : 0);
+    dailyStudents.push(found ? Number(found.daily_students) : 0);
+  }
+
+  trendChart = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [
+        {
+          label: 'امتیاز روزانه',
+          data: dailyTotals,
+          borderColor: '#06b6d4',
+          backgroundColor: 'rgba(6, 182, 212, 0.1)',
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2,
+          pointBackgroundColor: '#06b6d4',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          yAxisID: 'y'
+        },
+        {
+          label: 'تعداد دانش‌آموز',
+          data: dailyStudents,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          tension: 0.4,
+          borderWidth: 2,
+          pointBackgroundColor: '#10b981',
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          yAxisID: 'y1',
+          borderDash: [5, 5]
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: '#94a3b8', font: { family: 'Vazirmatn' } }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#94a3b8', font: { family: 'Vazirmatn', size: 10 }, maxRotation: 45, minRotation: 0 },
+          grid: { color: 'rgba(148, 163, 184, 0.1)' }
+        },
+        y: {
+          position: 'right',
+          ticks: { color: '#94a3b8', font: { family: 'Vazirmatn' } },
+          grid: { color: 'rgba(148, 163, 184, 0.1)' }
+        },
+        y1: {
+          position: 'left',
+          ticks: { color: '#94a3b8', font: { family: 'Vazirmatn' } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+/* ============================================
+   نمودار دایره‌ای (نوع امتیاز)
+   ============================================ */
+function renderTypeChart(types) {
+  const canvas = document.getElementById('typeChart');
+  if (!canvas) return;
+
+  if (typeChart) typeChart.destroy();
+
+  const typeNames = {
+    'attendance': 'حضور',
+    'manual': 'متفرقه',
+    'bonus': 'پاداش'
+  };
+
+  const labels = types.map(t => typeNames[t.score_type] || t.score_type);
+  const values = types.map(t => Number(t.total));
+
+  const colors = ['#06b6d4', '#10b981', '#f59e0b'];
+
+  if (labels.length === 0) {
+    labels.push('هنوز داده‌ای نیست');
+    values.push(1);
+  }
+
+  typeChart = new Chart(canvas.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderColor: '#1e293b',
+        borderWidth: 3,
+        hoverOffset: 10
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: '#94a3b8',
+            font: { family: 'Vazirmatn', size: 12 },
+            padding: 16,
+            usePointStyle: true
+          }
+        }
+      },
+      cutout: '65%'
+    }
+  });
+}
+
+/* ============================================
+   نمودار میله‌ای (گروه‌ها)
+   ============================================ */
+function renderGroupChart(groupData) {
+  const canvas = document.getElementById('groupChart');
+  if (!canvas) return;
+
+  if (groupChart) groupChart.destroy();
+
+  if (groupData.length === 0) {
+    canvas.parentElement.innerHTML = '<div class="no-result">گروهی یافت نشد</div>';
+    return;
+  }
+
+  const labels = groupData.map(g => g.name.length > 15 ? g.name.slice(0, 15) + '...' : g.name);
+  const totals = groupData.map(g => g.total);
+
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+  gradient.addColorStop(0, 'rgba(6, 182, 212, 0.9)');
+  gradient.addColorStop(1, 'rgba(16, 185, 129, 0.6)');
+
+  groupChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'امتیاز کل',
+        data: totals,
+        backgroundColor: gradient,
+        borderColor: '#06b6d4',
+        borderWidth: 1,
+        borderRadius: 8,
+        barThickness: 30
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#94a3b8', font: { family: 'Vazirmatn', size: 10 }, maxRotation: 45 },
+          grid: { display: false }
+        },
+        y: {
+          position: 'right',
+          ticks: { color: '#94a3b8', font: { family: 'Vazirmatn' } },
+          grid: { color: 'rgba(148, 163, 184, 0.1)' }
+        }
+      }
+    }
+  });
+}
+
+/* ============================================
+   🏆 Leaderboard پیشرفته
+   ============================================ */
+async function renderLeaderboard(period = 'all') {
+  leaderboardPeriod = period;
+
+  const container = document.getElementById('leaderboardSection');
+  if (!container) return;
+
+  container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
+
+  try {
+    const token = Auth.getToken();
+    const { data, error } = await db.rpc('get_leaderboard', {
+      p_token: token,
+      p_period: period
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+
+    const leaders = data.leaders || [];
+
+    const periodLabels = {
+      'week': '🗓️ این هفته',
+      'month': '📅 این ماه',
+      'all': '🏆 همه دوران'
+    };
+
+    container.innerHTML = `
+      <div class="leaderboard-header">
+        <h3>🏆 برترین‌ها</h3>
+        <div class="leaderboard-tabs">
+          <button class="lb-tab ${period === 'week' ? 'active' : ''}" onclick="renderLeaderboard('week')">این هفته</button>
+          <button class="lb-tab ${period === 'month' ? 'active' : ''}" onclick="renderLeaderboard('month')">این ماه</button>
+          <button class="lb-tab ${period === 'all' ? 'active' : ''}" onclick="renderLeaderboard('all')">همه دوران</button>
+        </div>
+      </div>
+
+      ${leaders.length === 0 ? `
+        <div class="no-result">هنوز داده‌ای برای این بازه نیست</div>
+      ` : `
+        <div class="leaderboard-list">
+          ${leaders.map((l, i) => {
+            const medals = ['🥇', '🥈', '🥉'];
+            const isTop3 = i < 3;
+            const score = period === 'all' ? l.total_score : l.period_score;
+            return `
+              <div class="lb-item ${isTop3 ? 'top-' + (i + 1) : ''} pop-in" onclick="showStudentProfile('${l.id}')">
+                <div class="lb-rank">${isTop3 ? medals[i] : (i + 1)}</div>
+                <div class="avatar" style="background:${l.avatar_color || '#06b6d4'};width:42px;height:42px;font-size:16px;">
+                  ${getInitial(l.full_name)}
+                </div>
+                <div class="lb-info">
+                  <div class="lb-name">${l.full_name}</div>
+                  <div class="lb-meta">${l.score_count || 0} امتیاز ثبت‌شده</div>
+                </div>
+                <div class="lb-score">${score}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `}
+    `;
+  } catch (err) {
+    console.error('خطا در Leaderboard:', err);
+    container.innerHTML = '<div class="no-result">خطا در بارگذاری Leaderboard</div>';
+  }
+}
+
+/* ============================================
+   نمایش پروفایل دانش‌آموز (مودال)
+   ============================================ */
+async function showStudentProfile(studentId) {
+  openModal('👤 پروفایل دانش‌آموز', '<div class="loading-screen"><div class="loader loader-lg"></div></div>');
+
+  try {
+    const [student, scores, groups, attendance] = await Promise.all([
+      Students.getById(studentId),
+      Scores.getByStudent(studentId),
+      Students.getGroups(studentId),
+      AttendanceRecords.getByStudent(studentId)
+    ]);
+
+    const groupsText = groups.length > 0
+      ? groups.map(g => g.name).join(' • ')
+      : 'بدون گروه';
+
+    const recentScores = scores.slice(0, 10);
+
+    document.getElementById('modalBody').innerHTML = `
+      <div class="profile-hero" style="margin-bottom:20px;">
+        <div class="profile-avatar" style="background:${student.avatar_color || '#06b6d4'}">
+          ${getInitial(student.full_name)}
+        </div>
+        <div class="profile-name">${student.full_name}</div>
+        <div class="profile-group">📁 ${groupsText}</div>
+        <div class="total-score-big">${student.total_score || 0}</div>
+        <div class="total-score-label">امتیاز کل</div>
+        ${attendance.length > 0 ? `<div style="margin-top:12px;font-size:13px;color:var(--gray);">✅ حضور در ${attendance.length} جلسه</div>` : ''}
+      </div>
+
+      <h4 style="margin-bottom:12px;font-size:15px;">📊 آخرین امتیازها</h4>
+      <div style="max-height:300px;overflow-y:auto;">
+        ${recentScores.length === 0 ? '<div class="no-result">هنوز امتیازی ثبت نشده</div>' :
+          recentScores.map(sc => {
+            const isNeg = sc.amount < 0;
+            return `
+              <div class="history-item ${isNeg ? 'negative' : ''}">
+                <div class="history-icon">${sc.score_type === 'attendance' ? '✅' : '📝'}</div>
+                <div class="history-content">
+                  <div class="history-reason">${sc.reason || 'بدون توضیح'}</div>
+                  <div class="history-meta">
+                    ${sc.session_title ? `<span>📚 ${sc.session_title}</span>` : ''}
+                    <span>📅 ${toJalaliFull(sc.created_at)}</span>
+                  </div>
+                </div>
+                <div class="history-amount ${isNeg ? 'negative' : ''}">
+                  ${sc.amount > 0 ? '+' : ''}${sc.amount}
+                </div>
+              </div>
+            `;
+          }).join('')
+        }
+      </div>
+    `;
+  } catch (err) {
+    console.error(err);
+    document.getElementById('modalBody').innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
+  }
+}
 
 /* ============================================
    راه‌اندازی
    ============================================ */
-document.addEventListener('DOMContentLoaded', async () => {
-    currentAdmin = requireAdmin();
-    if (!currentAdmin) return;
-
-    initHeader();
-    initTheme();
-    initTabs();
-    initModals();
-
-    await loadAll();
-    renderStats();
-    renderRecentScores();
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    if (document.getElementById('chartsSection')) {
+      renderCharts();
+      renderLeaderboard('all');
+    }
+  }, 1000);
 });
-
-/* ============================================
-   هدر
-   ============================================ */
-function initHeader() {
-    document.getElementById('adminName').textContent = currentAdmin.full_name;
-
-    const roleBadge = document.getElementById('roleBadge');
-    if (currentAdmin.role === 'super') {
-        roleBadge.textContent = '👑 سوپر ادمین';
-        roleBadge.className = 'role-badge super';
-    } else {
-        roleBadge.textContent = '🔑 ادمین';
-        roleBadge.className = 'role-badge admin';
-        // مخفی کردن تب ادمین‌ها برای ادمین معمولی
-        document.getElementById('adminsTab').style.display = 'none';
-    }
-
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        if (confirm('از پنل خارج می‌شی؟')) {
-            Auth.clear();
-            window.location.href = 'login.html';
-        }
-    });
-}
-
-/* ============================================
-   تم
-   ============================================ */
-function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    if (savedTheme === 'light') {
-        document.body.classList.add('light-mode');
-        document.getElementById('themeToggle').textContent = '☀️';
-    }
-
-    document.getElementById('themeToggle').addEventListener('click', () => {
-        document.body.classList.toggle('light-mode');
-        const isLight = document.body.classList.contains('light-mode');
-        localStorage.setItem('theme', isLight ? 'light' : 'dark');
-        document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
-    });
-}
-
-/* ============================================
-   تب‌ها
-   ============================================ */
-function initTabs() {
-    const tabs = document.querySelectorAll('.tab-btn');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            tab.classList.add('active');
-            document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-            onTabOpen(tab.dataset.tab);
-        });
-    });
-}
-
-async function onTabOpen(tabName) {
-    if (tabName === 'groups') await renderGroupsList();
-    else if (tabName === 'students') await renderStudents();
-    else if (tabName === 'attendance') await renderAttendance();
-    else if (tabName === 'sessions') await renderSessionsList();
-    else if (tabName === 'admins') await renderAdminsList();
-    else if (tabName === 'dashboard') {
-        renderStats();
-        renderRecentScores();
-    }
-}
-
-/* ============================================
-   مودال
-   ============================================ */
-function initModals() {
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal-overlay')) {
-            e.target.classList.remove('active');
-        }
-    });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeModal();
-    });
-}
-
-function openModal(title, bodyHTML) {
-    document.getElementById('modalTitle').textContent = title;
-    document.getElementById('modalBody').innerHTML = bodyHTML;
-    document.getElementById('mainModal').classList.add('active');
-}
-
-function closeModal() {
-    document.getElementById('mainModal').classList.remove('active');
-}
-
-/* ============================================
-   بارگذاری همه داده‌ها
-   ============================================ */
-async function loadAll() {
-    try {
-        const [groups, students] = await Promise.all([
-            Groups.getAll(),
-            Students.getAll()
-        ]);
-        allGroupsCache = groups;
-        allStudentsCache = students;
-
-        fillGroupSelects();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا در بارگذاری اطلاعات', 'error');
-    }
-}
-
-function fillGroupSelects() {
-    const options = allGroupsCache.map(g =>
-        `<option value="${g.id}">${g.name}</option>`
-    ).join('');
-
-    const filterGroup = document.getElementById('filterGroup');
-    if (filterGroup) filterGroup.innerHTML = `<option value="">همه گروه‌ها</option>${options}`;
-
-    const attGroup = document.getElementById('attGroup');
-    if (attGroup) attGroup.innerHTML = `<option value="">انتخاب گروه...</option>${options}`;
-}
-
-/* ============================================
-   داشبورد - آمار
-   ============================================ */
-function renderStats() {
-    const container = document.getElementById('statsGrid');
-
-    const totalStudents = allStudentsCache.length;
-    const totalGroups = allGroupsCache.length;
-    const totalScores = allStudentsCache.reduce((sum, s) => sum + (s.total_score || 0), 0);
-
-    container.innerHTML = `
-    <div class="stat-card">
-      <div class="stat-icon">👥</div>
-      <div class="stat-value">${totalStudents}</div>
-      <div class="stat-label">دانش‌آموز</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">📁</div>
-      <div class="stat-value">${totalGroups}</div>
-      <div class="stat-label">گروه</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">⭐</div>
-      <div class="stat-value">${totalScores}</div>
-      <div class="stat-label">مجموع امتیازات</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🥇</div>
-      <div class="stat-value">${allStudentsCache[0]?.total_score || 0}</div>
-      <div class="stat-label">بالاترین امتیاز</div>
-    </div>
-  `;
-}
-
-async function renderRecentScores() {
-    const container = document.getElementById('recentScores');
-    container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
-
-    try {
-        const scores = await Scores.getRecent(10);
-
-        if (scores.length === 0) {
-            container.innerHTML = '<div class="no-result">هنوز امتیازی ثبت نشده</div>';
-            return;
-        }
-
-        container.innerHTML = scores.map(sc => {
-            const isNeg = sc.amount < 0;
-            return `
-        <div class="history-item ${isNeg ? 'negative' : ''}">
-          <div class="history-icon">⭐</div>
-          <div class="history-content">
-            <div class="history-reason">${sc.students?.full_name || '?'} — ${sc.reason || 'بدون توضیح'}</div>
-            <div class="history-meta"><span>📅 ${toJalaliFull(sc.created_at)}</span></div>
-          </div>
-          <div class="history-amount ${isNeg ? 'negative' : ''}">${sc.amount > 0 ? '+' : ''}${sc.amount}</div>
-        </div>
-      `;
-        }).join('');
-    } catch (err) {
-        console.error(err);
-        container.innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
-    }
-}
-
-/* ============================================
-   گروه‌ها
-   ============================================ */
-async function renderGroupsList() {
-    const container = document.getElementById('groupsList');
-    container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
-
-    try {
-        const groups = await Groups.getWithCount();
-        allGroupsCache = groups;
-
-        if (groups.length === 0) {
-            container.innerHTML = '<div class="no-result">هنوز گروهی ساخته نشده</div>';
-            return;
-        }
-
-        container.innerHTML = groups.map(g => `
-      <div class="session-row">
-        <div class="session-info">
-          <div class="session-title-text">${g.name}</div>
-          <div class="session-meta">
-            <span>👥 ${g.student_count || 0} نفر</span>
-            ${g.description ? `<span>📝 ${g.description}</span>` : ''}
-          </div>
-        </div>
-        <button class="btn btn-ghost btn-small" onclick="editGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}', '${(g.description || '').replace(/'/g, "\\'")}')">✏️</button>
-        <button class="btn btn-danger btn-small" onclick="deleteGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')">🗑️</button>
-      </div>
-    `).join('');
-    } catch (err) {
-        console.error(err);
-        container.innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
-    }
-}
-
-function openGroupForm() {
-    openModal('📁 گروه جدید', `
-    <div class="form-group">
-      <label class="form-label">نام گروه</label>
-      <input type="text" class="form-input" id="groupNameInput" placeholder="مثلاً: فرهنگی شهید مطهری">
-    </div>
-    <div class="form-group">
-      <label class="form-label">توضیحات (اختیاری)</label>
-      <input type="text" class="form-input" id="groupDescInput" placeholder="توضیح کوتاه">
-    </div>
-    <button class="btn btn-primary" style="width:100%;" onclick="saveGroup()">💾 ذخیره</button>
-  `);
-}
-
-async function saveGroup() {
-    const name = document.getElementById('groupNameInput').value.trim();
-    const desc = document.getElementById('groupDescInput').value.trim();
-
-    if (!name) {
-        showToast('اسم گروه رو وارد کن', 'warning');
-        return;
-    }
-
-    try {
-        await Groups.create(name, desc, currentAdmin.id);
-        showToast('گروه ساخته شد ✅', 'success');
-        closeModal();
-        await loadAll();
-        await renderGroupsList();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا در ساخت گروه: ' + err.message, 'error');
-    }
-}
-
-function editGroup(id, name, desc) {
-    openModal('✏️ ویرایش گروه', `
-    <div class="form-group">
-      <label class="form-label">نام گروه</label>
-      <input type="text" class="form-input" id="groupNameInput" value="${name}">
-    </div>
-    <div class="form-group">
-      <label class="form-label">توضیحات</label>
-      <input type="text" class="form-input" id="groupDescInput" value="${desc}">
-    </div>
-    <button class="btn btn-primary" style="width:100%;" onclick="updateGroup('${id}')">💾 ذخیره تغییرات</button>
-  `);
-}
-
-async function updateGroup(id) {
-    const name = document.getElementById('groupNameInput').value.trim();
-    const desc = document.getElementById('groupDescInput').value.trim();
-
-    if (!name) {
-        showToast('اسم گروه رو وارد کن', 'warning');
-        return;
-    }
-
-    try {
-        await Groups.update(id, name, desc);
-        showToast('گروه ویرایش شد ✅', 'success');
-        closeModal();
-        await loadAll();
-        await renderGroupsList();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا در ویرایش', 'error');
-    }
-}
-
-async function deleteGroup(id, name) {
-    if (!confirm(`گروه "${name}" حذف بشه؟ دانش‌آموزانش بدون گروه می‌شن.`)) return;
-
-    try {
-        await Groups.delete(id);
-        showToast('گروه حذف شد', 'success');
-        await loadAll();
-        await renderGroupsList();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا در حذف', 'error');
-    }
-}
-
-/* ============================================
-   دانش‌آموزان
-   ============================================ */
-async function renderStudents() {
-    const container = document.getElementById('studentsList');
-    const filterGroup = document.getElementById('filterGroup').value;
-    const search = document.getElementById('studentSearch').value.trim();
-
-    let students = allStudentsCache;
-
-    if (filterGroup) students = students.filter(s => s.group_id === filterGroup);
-    if (search) students = students.filter(s => s.full_name.includes(search));
-
-    if (students.length === 0) {
-        container.innerHTML = '<div class="no-result">دانش‌آموزی یافت نشد</div>';
-        return;
-    }
-
-    students.sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
-
-    container.innerHTML = students.map(s => `
-    <div class="session-row">
-      <div class="avatar" style="background:${s.avatar_color || '#06b6d4'};width:40px;height:40px;font-size:16px;">
-        ${getInitial(s.full_name)}
-      </div>
-      <div class="session-info">
-        <div class="session-title-text">${s.full_name}</div>
-        <div class="session-meta">
-          <span>📁 ${s.groups?.name || 'بدون گروه'}</span>
-          ${s.phone ? `<span>📱 ${s.phone}</span>` : ''}
-          <span>⭐ ${s.total_score || 0} امتیاز</span>
-        </div>
-      </div>
-      <button class="btn btn-ghost btn-small" onclick="editStudent('${s.id}')">✏️</button>
-      <button class="btn btn-danger btn-small" onclick="deleteStudent('${s.id}', '${s.full_name.replace(/'/g, "\\'")}')">🗑️</button>
-    </div>
-  `).join('');
-}
-
-function openStudentForm() {
-    const groupOptions = allGroupsCache.map(g =>
-        `<option value="${g.id}">${g.name}</option>`
-    ).join('');
-
-    openModal('👤 دانش‌آموز جدید', `
-    <div class="form-group">
-      <label class="form-label">نام و نام خانوادگی</label>
-      <input type="text" class="form-input" id="studentNameInput" placeholder="مثلاً: علی محمدی">
-    </div>
-    <div class="form-group">
-      <label class="form-label">شماره تلفن (اختیاری)</label>
-      <input type="tel" class="form-input" id="studentPhoneInput" placeholder="09xxxxxxxxx">
-    </div>
-    <div class="form-group">
-      <label class="form-label">گروه</label>
-      <select class="form-select" id="studentGroupInput">
-        <option value="">بدون گروه</option>
-        ${groupOptions}
-      </select>
-    </div>
-    <button class="btn btn-primary" style="width:100%;" onclick="saveStudent()">💾 ذخیره</button>
-  `);
-}
-
-async function saveStudent() {
-    const name = document.getElementById('studentNameInput').value.trim();
-    const phone = document.getElementById('studentPhoneInput').value.trim();
-    const groupId = document.getElementById('studentGroupInput').value || null;
-
-    if (!name) {
-        showToast('اسم رو وارد کن', 'warning');
-        return;
-    }
-
-    try {
-        await Students.create(name, phone, groupId);
-        showToast('دانش‌آموز اضافه شد ✅', 'success');
-        closeModal();
-        await loadAll();
-        await renderStudents();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا: ' + err.message, 'error');
-    }
-}
-
-function editStudent(id) {
-    const student = allStudentsCache.find(s => s.id === id);
-    if (!student) return;
-
-    const groupOptions = allGroupsCache.map(g =>
-        `<option value="${g.id}" ${g.id === student.group_id ? 'selected' : ''}>${g.name}</option>`
-    ).join('');
-
-    openModal('✏️ ویرایش دانش‌آموز', `
-    <div class="form-group">
-      <label class="form-label">نام و نام خانوادگی</label>
-      <input type="text" class="form-input" id="studentNameInput" value="${student.full_name}">
-    </div>
-    <div class="form-group">
-      <label class="form-label">شماره تلفن</label>
-      <input type="tel" class="form-input" id="studentPhoneInput" value="${student.phone || ''}">
-    </div>
-    <div class="form-group">
-      <label class="form-label">گروه</label>
-      <select class="form-select" id="studentGroupInput">
-        <option value="">بدون گروه</option>
-        ${groupOptions}
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">امتیاز کل (دستی)</label>
-      <input type="number" class="form-input" id="studentScoreInput" value="${student.total_score || 0}">
-    </div>
-    <button class="btn btn-primary" style="width:100%;" onclick="updateStudent('${id}')">💾 ذخیره تغییرات</button>
-  `);
-}
-
-async function updateStudent(id) {
-    const full_name = document.getElementById('studentNameInput').value.trim();
-    const phone = document.getElementById('studentPhoneInput').value.trim();
-    const group_id = document.getElementById('studentGroupInput').value || null;
-    const total_score = Number(document.getElementById('studentScoreInput').value) || 0;
-
-    if (!full_name) {
-        showToast('اسم رو وارد کن', 'warning');
-        return;
-    }
-
-    try {
-        await Students.update(id, { full_name, phone, group_id, total_score });
-        showToast('ویرایش شد ✅', 'success');
-        closeModal();
-        await loadAll();
-        await renderStudents();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا: ' + err.message, 'error');
-    }
-}
-
-async function deleteStudent(id, name) {
-    if (!confirm(`دانش‌آموز "${name}" حذف بشه؟ همه امتیازاش هم پاک می‌شن.`)) return;
-
-    try {
-        await Students.delete(id);
-        showToast('حذف شد', 'success');
-        await loadAll();
-        await renderStudents();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا در حذف', 'error');
-    }
-}
-
-/* ============================================
-   ثبت حضور
-   ============================================ */
-async function renderAttendance() {
-    const groupId = document.getElementById('attGroup').value;
-    const container = document.getElementById('attendanceList');
-    selectedAttendance.clear();
-    updateAttendanceCounter();
-
-    if (!groupId) {
-        container.innerHTML = '<div class="no-result">اول یه گروه انتخاب کن</div>';
-        return;
-    }
-
-    container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
-
-    try {
-        const students = await Students.getByGroup(groupId);
-
-        if (students.length === 0) {
-            container.innerHTML = '<div class="no-result">این گروه دانش‌آموزی نداره</div>';
-            return;
-        }
-
-        container.innerHTML = students.map(s => `
-      <div class="attendance-item" data-id="${s.id}" onclick="toggleAttendance('${s.id}')">
-        <div class="custom-checkbox"></div>
-        <div class="avatar" style="background:${s.avatar_color || '#06b6d4'};width:38px;height:38px;font-size:15px;">
-          ${getInitial(s.full_name)}
-        </div>
-        <div class="student-info">
-          <div class="student-name">${s.full_name}</div>
-          <div class="student-group-name">امتیاز فعلی: ${s.total_score || 0}</div>
-        </div>
-      </div>
-    `).join('');
-    } catch (err) {
-        console.error(err);
-        container.innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
-    }
-}
-
-function toggleAttendance(studentId) {
-    const el = document.querySelector(`.attendance-item[data-id="${studentId}"]`);
-    if (!el) return;
-
-    if (selectedAttendance.has(studentId)) {
-        selectedAttendance.delete(studentId);
-        el.classList.remove('selected');
-    } else {
-        selectedAttendance.add(studentId);
-        el.classList.add('selected');
-    }
-    updateAttendanceCounter();
-}
-
-function selectAllAttendance() {
-    document.querySelectorAll('.attendance-item').forEach(el => {
-        const id = el.dataset.id;
-        selectedAttendance.add(id);
-        el.classList.add('selected');
-    });
-    updateAttendanceCounter();
-}
-
-function deselectAllAttendance() {
-    document.querySelectorAll('.attendance-item').forEach(el => {
-        el.classList.remove('selected');
-    });
-    selectedAttendance.clear();
-    updateAttendanceCounter();
-}
-
-function updateAttendanceCounter() {
-    const count = selectedAttendance.size;
-    document.getElementById('attCounter').textContent = `${count} نفر انتخاب شده`;
-}
-
-async function submitAttendance() {
-    if (selectedAttendance.size === 0) {
-        showToast('حداقل یه نفر رو انتخاب کن', 'warning');
-        return;
-    }
-
-    const reason = document.getElementById('attReason').value.trim() || 'حضور در جلسه';
-    const sessionTitle = document.getElementById('attSessionTitle').value.trim();
-    const groupId = document.getElementById('attGroup').value;
-
-    const entries = Array.from(selectedAttendance).map(studentId => ({
-        studentId,
-        amount: 5,
-        reason,
-        sessionTitle
-    }));
-
-    try {
-        await Scores.addBulk(entries, 'attendance', currentAdmin.id);
-
-        // اگه عنوان جلسه داشت، تو جدول sessions هم ثبت کن
-        if (sessionTitle) {
-            try {
-                await Sessions.create(sessionTitle, new Date().toISOString().split('T')[0], groupId, reason, currentAdmin.id);
-            } catch (e) { console.warn('خطا در ثبت جلسه:', e); }
-        }
-
-        showToast(`✅ ${entries.length} نفر ثبت شدن (+۵ امتیاز)`, 'success');
-
-        // ریست کردن
-        selectedAttendance.clear();
-        document.getElementById('attReason').value = '';
-        document.getElementById('attSessionTitle').value = '';
-        await loadAll();
-        await renderAttendance();
-        renderStats();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا در ثبت: ' + err.message, 'error');
-    }
-}
-
-/* ============================================
-   امتیاز متفرقه
-   ============================================ */
-async function searchManualStudent() {
-    const query = document.getElementById('manualSearch').value.trim();
-    const container = document.getElementById('manualSearchResults');
-
-    if (query.length < 1) {
-        container.innerHTML = '';
-        return;
-    }
-
-    try {
-        const results = await Students.search(query);
-
-        if (results.length === 0) {
-            container.innerHTML = '<div class="no-result">نتیجه‌ای پیدا نشد</div>';
-            return;
-        }
-
-        container.innerHTML = results.map(s => `
-      <div class="search-result" onclick='selectManualStudent(${JSON.stringify({ id: s.id, full_name: s.full_name, avatar_color: s.avatar_color, group: s.groups?.name, total_score: s.total_score }).replace(/'/g, "&#39;")})'>
-        <div class="avatar" style="background:${s.avatar_color || '#06b6d4'}">
-          ${getInitial(s.full_name)}
-        </div>
-        <div class="student-info">
-          <div class="student-name">${s.full_name}</div>
-          <div class="student-group-name">${s.groups?.name || 'بدون گروه'} — ${s.total_score || 0} امتیاز</div>
-        </div>
-      </div>
-    `).join('');
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-function selectManualStudent(student) {
-    manualSelectedStudent = student;
-    document.getElementById('manualSearchResults').innerHTML = '';
-    document.getElementById('manualSearch').value = student.full_name;
-
-    const box = document.getElementById('manualSelectedBox');
-    box.style.display = 'block';
-
-    document.getElementById('manualAvatar').textContent = getInitial(student.full_name);
-    document.getElementById('manualAvatar').style.background = student.avatar_color || '#06b6d4';
-    document.getElementById('manualName').textContent = student.full_name;
-    document.getElementById('manualGroup').textContent = `📁 ${student.group || 'بدون گروه'} — امتیاز فعلی: ${student.total_score || 0}`;
-}
-
-async function submitManualScore() {
-    if (!manualSelectedStudent) {
-        showToast('اول یه دانش‌آموز انتخاب کن', 'warning');
-        return;
-    }
-
-    const amount = Number(document.getElementById('manualAmount').value);
-    if (!amount) {
-        showToast('مقدار امتیاز رو وارد کن', 'warning');
-        return;
-    }
-
-    const reason = document.getElementById('manualReason').value.trim() || 'امتیاز متفرقه';
-    const sessionTitle = document.getElementById('manualSession').value.trim();
-
-    try {
-        const newTotal = await Scores.add(manualSelectedStudent.id, amount, reason, sessionTitle, 'manual', currentAdmin.id);
-        showToast(`✅ ${amount > 0 ? '+' : ''}${amount} امتیاز ثبت شد. جمع: ${newTotal}`, 'success');
-
-        // ریست
-        document.getElementById('manualAmount').value = '';
-        document.getElementById('manualReason').value = '';
-        document.getElementById('manualSession').value = '';
-        document.getElementById('manualSearch').value = '';
-        document.getElementById('manualSelectedBox').style.display = 'none';
-        manualSelectedStudent = null;
-
-        await loadAll();
-        renderStats();
-        renderRecentScores();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا: ' + err.message, 'error');
-    }
-}
-
-/* ============================================
-   جلسات
-   ============================================ */
-async function renderSessionsList() {
-    const container = document.getElementById('sessionsList');
-    container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
-
-    try {
-        const sessions = await Sessions.getAll();
-
-        if (sessions.length === 0) {
-            container.innerHTML = '<div class="no-result">هنوز جلسه‌ای ثبت نشده</div>';
-            return;
-        }
-
-        container.innerHTML = sessions.map(s => `
-      <div class="session-row">
-        <div class="session-info">
-          <div class="session-title-text">📚 ${s.title}</div>
-          <div class="session-meta">
-            <span>📅 ${toJalali(s.session_date)}</span>
-            ${s.groups?.name ? `<span>📁 ${s.groups.name}</span>` : ''}
-            ${s.notes ? `<span>📝 ${s.notes}</span>` : ''}
-          </div>
-        </div>
-        <button class="btn btn-ghost btn-small" onclick="editSession('${s.id}')">✏️</button>
-        <button class="btn btn-danger btn-small" onclick="deleteSession('${s.id}', '${s.title.replace(/'/g, "\\'")}')">🗑️</button>
-      </div>
-    `).join('');
-    } catch (err) {
-        console.error(err);
-        container.innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
-    }
-}
-
-function openSessionForm() {
-    const today = new Date().toISOString().split('T')[0];
-    const groupOptions = allGroupsCache.map(g =>
-        `<option value="${g.id}">${g.name}</option>`
-    ).join('');
-
-    openModal('📚 جلسه جدید', `
-    <div class="form-group">
-      <label class="form-label">عنوان جلسه</label>
-      <input type="text" class="form-input" id="sessionTitleInput" placeholder="مثلاً: قصه‌های قرآنی - جلسه ۵">
-    </div>
-    <div class="form-group">
-      <label class="form-label">تاریخ</label>
-      <input type="date" class="form-input" id="sessionDateInput" value="${today}">
-    </div>
-    <div class="form-group">
-      <label class="form-label">گروه (اختیاری)</label>
-      <select class="form-select" id="sessionGroupInput">
-        <option value="">همه / عمومی</option>
-        ${groupOptions}
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">توضیحات</label>
-      <textarea class="form-textarea" id="sessionNotesInput" placeholder="توضیحات اضافه..."></textarea>
-    </div>
-    <button class="btn btn-primary" style="width:100%;" onclick="saveSession()">💾 ذخیره</button>
-  `);
-}
-
-async function saveSession() {
-    const title = document.getElementById('sessionTitleInput').value.trim();
-    const date = document.getElementById('sessionDateInput').value;
-    const groupId = document.getElementById('sessionGroupInput').value || null;
-    const notes = document.getElementById('sessionNotesInput').value.trim();
-
-    if (!title) {
-        showToast('عنوان جلسه رو وارد کن', 'warning');
-        return;
-    }
-
-    try {
-        await Sessions.create(title, date, groupId, notes, currentAdmin.id);
-        showToast('جلسه ثبت شد ✅', 'success');
-        closeModal();
-        await renderSessionsList();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا: ' + err.message, 'error');
-    }
-}
-
-async function editSession(id) {
-    try {
-        const sessions = await Sessions.getAll();
-        const s = sessions.find(x => x.id === id);
-        if (!s) return;
-
-        const groupOptions = allGroupsCache.map(g =>
-            `<option value="${g.id}" ${g.id === s.group_id ? 'selected' : ''}>${g.name}</option>`
-        ).join('');
-
-        openModal('✏️ ویرایش جلسه', `
-      <div class="form-group">
-        <label class="form-label">عنوان</label>
-        <input type="text" class="form-input" id="sessionTitleInput" value="${s.title}">
-      </div>
-      <div class="form-group">
-        <label class="form-label">تاریخ</label>
-        <input type="date" class="form-input" id="sessionDateInput" value="${s.session_date}">
-      </div>
-      <div class="form-group">
-        <label class="form-label">گروه</label>
-        <select class="form-select" id="sessionGroupInput">
-          <option value="">همه / عمومی</option>
-          ${groupOptions}
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">توضیحات</label>
-        <textarea class="form-textarea" id="sessionNotesInput">${s.notes || ''}</textarea>
-      </div>
-      <button class="btn btn-primary" style="width:100%;" onclick="updateSession('${id}')">💾 ذخیره تغییرات</button>
-    `);
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-async function updateSession(id) {
-    const title = document.getElementById('sessionTitleInput').value.trim();
-    const session_date = document.getElementById('sessionDateInput').value;
-    const group_id = document.getElementById('sessionGroupInput').value || null;
-    const notes = document.getElementById('sessionNotesInput').value.trim();
-
-    try {
-        await Sessions.update(id, { title, session_date, group_id, notes });
-        showToast('ویرایش شد ✅', 'success');
-        closeModal();
-        await renderSessionsList();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا', 'error');
-    }
-}
-
-async function deleteSession(id, title) {
-    if (!confirm(`جلسه "${title}" حذف بشه؟`)) return;
-    try {
-        await Sessions.delete(id);
-        showToast('حذف شد', 'success');
-        await renderSessionsList();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا', 'error');
-    }
-}
-
-/* ============================================
-   ادمین‌ها
-   ============================================ */
-async function renderAdminsList() {
-    const container = document.getElementById('adminsList');
-    container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
-
-    try {
-        const admins = await Admins.getAll();
-
-        container.innerHTML = admins.map(a => `
-      <div class="admin-row">
-        <div class="avatar" style="background:${a.role === 'super' ? '#fbbf24' : '#06b6d4'};width:44px;height:44px;">
-          ${getInitial(a.full_name)}
-        </div>
-        <div class="admin-row-info">
-          <div class="admin-row-name">
-            ${a.full_name}
-            ${a.role === 'super' ? '<span class="role-badge super" style="margin-right:8px;">سوپر</span>' : ''}
-          </div>
-          <div class="admin-row-phone">📱 ${a.phone}</div>
-        </div>
-        ${a.role !== 'super' ? `
-          <button class="btn btn-ghost btn-small" onclick="changeAdminPassword('${a.id}', '${a.full_name.replace(/'/g, "\\'")}')">🔒 رمز</button>
-          <button class="btn btn-danger btn-small" onclick="deleteAdmin('${a.id}', '${a.full_name.replace(/'/g, "\\'")}')">🗑️</button>
-        ` : ''}
-      </div>
-    `).join('');
-    } catch (err) {
-        console.error(err);
-        container.innerHTML = '<div class="no-result">خطا</div>';
-    }
-}
-
-function openAdminForm() {
-    openModal('🔑 ادمین جدید', `
-    <div class="form-group">
-      <label class="form-label">نام و نام خانوادگی</label>
-      <input type="text" class="form-input" id="adminNameInput" placeholder="مثلاً: علی محمدی">
-    </div>
-    <div class="form-group">
-      <label class="form-label">شماره تلفن</label>
-      <input type="tel" class="form-input" id="adminPhoneInput" placeholder="09xxxxxxxxx">
-    </div>
-    <div class="form-group">
-      <label class="form-label">رمز عبور</label>
-      <input type="password" class="form-input" id="adminPasswordInput" placeholder="حداقل ۶ کاراکتر">
-    </div>
-    <button class="btn btn-primary" style="width:100%;" onclick="saveAdmin()">💾 ذخیره</button>
-  `);
-}
-
-async function saveAdmin() {
-    const name = document.getElementById('adminNameInput').value.trim();
-    const phone = document.getElementById('adminPhoneInput').value.trim();
-    const password = document.getElementById('adminPasswordInput').value;
-
-    if (!name || !phone || !password) {
-        showToast('همه فیلدها رو پر کن', 'warning');
-        return;
-    }
-
-    if (password.length < 6) {
-        showToast('رمز حداقل ۶ کاراکتر', 'warning');
-        return;
-    }
-
-    try {
-        await Admins.create(phone, password, name, 'admin', currentAdmin.id);
-        showToast('ادمین اضافه شد ✅', 'success');
-        closeModal();
-        await renderAdminsList();
-    } catch (err) {
-        console.error(err);
-        if (err.message.includes('duplicate')) {
-            showToast('این شماره قبلاً ثبت شده', 'error');
-        } else {
-            showToast('خطا: ' + err.message, 'error');
-        }
-    }
-}
-
-function changeAdminPassword(id, name) {
-    openModal('🔒 تغییر رمز ادمین', `
-    <p style="color:var(--gray);margin-bottom:16px;font-size:14px;">تغییر رمز برای: <b>${name}</b></p>
-    <div class="form-group">
-      <label class="form-label">رمز جدید</label>
-      <input type="password" class="form-input" id="newPasswordInput" placeholder="حداقل ۶ کاراکتر">
-    </div>
-    <button class="btn btn-primary" style="width:100%;" onclick="updateAdminPassword('${id}')">💾 ذخیره</button>
-  `);
-}
-
-async function updateAdminPassword(id) {
-    const password = document.getElementById('newPasswordInput').value;
-    if (password.length < 6) {
-        showToast('رمز حداقل ۶ کاراکتر', 'warning');
-        return;
-    }
-    try {
-        await Admins.updatePassword(id, password);
-        showToast('رمز تغییر کرد ✅', 'success');
-        closeModal();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا', 'error');
-    }
-}
-
-async function deleteAdmin(id, name) {
-    if (!confirm(`ادمین "${name}" حذف بشه؟`)) return;
-    try {
-        await Admins.delete(id);
-        showToast('حذف شد', 'success');
-        await renderAdminsList();
-    } catch (err) {
-        console.error(err);
-        showToast('خطا', 'error');
-    }
-}
