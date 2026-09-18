@@ -1,1174 +1,1072 @@
-﻿/* ============================================
-   سیستم امتیازدهی - استایل اصلی
+/* ============================================
+   سیستم امتیازدهی - استایل اصلی (نسخه نهایی)
    تم: آبی فیروزه‌ای + سبز آبی
    ============================================ */
 
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 :root {
-    --cyan: #06b6d4;
-    --emerald: #10b981;
-    --sky: #0ea5e9;
-    --teal: #14b8a6;
-    --dark: #0f172a;
-    --dark-2: #1e293b;
-    --dark-3: #334155;
-    --light: #f8fafc;
-    --gray: #94a3b8;
-    --gray-2: #64748b;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --gold: #fbbf24;
-    --silver: #cbd5e1;
-    --bronze: #d97706;
-    --gradient: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
-    --gradient-2: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%);
-    --shadow: 0 8px 32px rgba(6, 182, 212, 0.15);
-    --shadow-hover: 0 12px 48px rgba(6, 182, 212, 0.3);
-    --radius: 16px;
-    --radius-sm: 10px;
+  --cyan: #06b6d4;
+  --emerald: #10b981;
+  --sky: #0ea5e9;
+  --teal: #14b8a6;
+  --dark: #0f172a;
+  --dark-2: #1e293b;
+  --dark-3: #334155;
+  --light: #f8fafc;
+  --gray: #94a3b8;
+  --gray-2: #64748b;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --gold: #fbbf24;
+  --silver: #cbd5e1;
+  --bronze: #d97706;
+  --gradient: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
+  --gradient-2: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%);
+  --shadow: 0 8px 32px rgba(6, 182, 212, 0.15);
+  --shadow-hover: 0 12px 48px rgba(6, 182, 212, 0.3);
+  --radius: 16px;
+  --radius-sm: 10px;
 }
 
 body.light-mode {
-    --dark: #f1f5f9;
-    --dark-2: #ffffff;
-    --dark-3: #e2e8f0;
-    --light: #0f172a;
-    --gray: #64748b;
-    --gray-2: #94a3b8;
+  --dark: #f1f5f9;
+  --dark-2: #ffffff;
+  --dark-3: #e2e8f0;
+  --light: #0f172a;
+  --gray: #64748b;
+  --gray-2: #94a3b8;
 }
 
 body {
-    font-family: 'Vazirmatn', 'Tahoma', sans-serif;
-    background: var(--dark);
-    color: var(--light);
-    min-height: 100vh;
-    direction: rtl;
-    overflow-x: hidden;
-    background-image: radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.15), transparent 40%), radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.15), transparent 40%);
-    background-attachment: fixed;
-    transition: background 0.3s, color 0.3s;
+  font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+  background: var(--dark);
+  color: var(--light);
+  min-height: 100vh;
+  direction: rtl;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.15), transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.15), transparent 40%);
+  background-attachment: fixed;
+  transition: background 0.3s, color 0.3s;
 }
 
-/* ============================================
-   کانتینر اصلی
-   ============================================ */
 .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 /* ============================================
    هدر
    ============================================ */
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    background: rgba(30, 41, 59, 0.7);
-    backdrop-filter: blur(20px);
-    border-radius: var(--radius);
-    border: 1px solid rgba(6, 182, 212, 0.2);
-    margin-bottom: 24px;
-    box-shadow: var(--shadow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
 }
 
 body.light-mode .header {
-    background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .header-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .logo-circle {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: var(--gradient);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    color: white;
-    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.5);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.5);
 }
 
 .header h1 {
-    font-size: 20px;
-    font-weight: 700;
-    background: var(--gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .header-sub {
-    font-size: 12px;
-    color: var(--gray);
+  font-size: 12px;
+  color: var(--gray);
 }
 
 .header-left {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 /* ============================================
    دکمه‌ها
    ============================================ */
 .btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
 }
 
 .btn-primary {
-    background: var(--gradient);
-    color: white;
-    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+  background: var(--gradient);
+  color: white;
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
 }
 
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-hover);
-    }
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
 
 .btn-ghost {
-    background: transparent;
-    color: var(--light);
-    border: 1px solid var(--dark-3);
+  background: transparent;
+  color: var(--light);
+  border: 1px solid var(--dark-3);
 }
 
-    .btn-ghost:hover {
-        border-color: var(--cyan);
-        color: var(--cyan);
-    }
+.btn-ghost:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
 
 .btn-danger {
-    background: var(--danger);
-    color: white;
+  background: var(--danger);
+  color: white;
 }
 
 .btn-success {
-    background: var(--emerald);
-    color: white;
+  background: var(--emerald);
+  color: white;
 }
 
 .btn-icon {
-    width: 42px;
-    height: 42px;
-    padding: 0;
-    justify-content: center;
-    border-radius: 50%;
-    background: rgba(6, 182, 212, 0.1);
-    color: var(--cyan);
-    border: 1px solid rgba(6, 182, 212, 0.3);
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(6, 182, 212, 0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(6, 182, 212, 0.3);
 }
 
-    .btn-icon:hover {
-        background: var(--gradient);
-        color: white;
-    }
+.btn-icon:hover {
+  background: var(--gradient);
+  color: white;
+}
 
 /* ============================================
-   کارت‌ها (Glassmorphism)
+   کارت‌ها
    ============================================ */
 .card {
-    background: rgba(30, 41, 59, 0.6);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(6, 182, 212, 0.15);
-    border-radius: var(--radius);
-    padding: 24px;
-    box-shadow: var(--shadow);
-    transition: all 0.3s;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
 }
 
 body.light-mode .card {
-    background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-hover);
-    border-color: rgba(6, 182, 212, 0.4);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: rgba(6, 182, 212, 0.4);
 }
 
 /* ============================================
    سرچ باکس
    ============================================ */
 .search-box {
-    position: relative;
-    margin-bottom: 24px;
+  position: relative;
+  margin-bottom: 24px;
 }
 
-    .search-box input {
-        width: 100%;
-        padding: 16px 56px 16px 20px;
-        background: rgba(30, 41, 59, 0.6);
-        backdrop-filter: blur(20px);
-        border: 2px solid rgba(6, 182, 212, 0.2);
-        border-radius: var(--radius);
-        color: var(--light);
-        font-family: inherit;
-        font-size: 16px;
-        transition: all 0.3s;
-    }
+.search-box input {
+  width: 100%;
+  padding: 16px 56px 16px 20px;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(6, 182, 212, 0.2);
+  border-radius: var(--radius);
+  color: var(--light);
+  font-family: inherit;
+  font-size: 16px;
+  transition: all 0.3s;
+}
 
 body.light-mode .search-box input {
-    background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .search-box input:focus {
-    outline: none;
-    border-color: var(--cyan);
-    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
 }
 
 .search-box::before {
-    content: '🔍';
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 20px;
-    pointer-events: none;
+  content: '🔍';
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  pointer-events: none;
 }
 
 /* ============================================
-   برترین‌ها (Leaderboard)
+   بخش عنوان
    ============================================ */
 .section-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--light);
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--light);
 }
 
+/* ============================================
+   برترین‌ها
+   ============================================ */
 .leaderboard {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
-    margin-bottom: 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
 }
 
 .top-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 20px;
-    background: rgba(30, 41, 59, 0.6);
-    backdrop-filter: blur(20px);
-    border-radius: var(--radius);
-    border: 2px solid transparent;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+  cursor: pointer;
 }
 
 body.light-mode .top-card {
-    background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .top-card.gold {
-    border-color: var(--gold);
-    box-shadow: 0 8px 32px rgba(251, 191, 36, 0.3);
+  border-color: var(--gold);
+  box-shadow: 0 8px 32px rgba(251, 191, 36, 0.3);
 }
 
 .top-card.silver {
-    border-color: var(--silver);
-    box-shadow: 0 8px 32px rgba(203, 213, 225, 0.3);
+  border-color: var(--silver);
+  box-shadow: 0 8px 32px rgba(203, 213, 225, 0.3);
 }
 
 .top-card.bronze {
-    border-color: var(--bronze);
-    box-shadow: 0 8px 32px rgba(217, 119, 6, 0.3);
+  border-color: var(--bronze);
+  box-shadow: 0 8px 32px rgba(217, 119, 6, 0.3);
 }
 
 .top-card:hover {
-    transform: translateY(-4px);
+  transform: translateY(-4px);
 }
 
 .medal {
-    font-size: 40px;
-    flex-shrink: 0;
+  font-size: 40px;
+  flex-shrink: 0;
 }
 
 .top-card-info {
-    flex: 1;
-    min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .top-card-name {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .top-card-score {
-    font-size: 14px;
-    color: var(--cyan);
-    font-weight: 600;
+  font-size: 14px;
+  color: var(--cyan);
+  font-weight: 600;
 }
 
 .rank-badge {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--gradient);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 14px;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
 }
 
 /* ============================================
-   لیست گروه‌ها
+   گروه‌ها
    ============================================ */
 .groups-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
 }
 
 .group-card {
-    padding: 20px;
-    background: rgba(30, 41, 59, 0.6);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(6, 182, 212, 0.2);
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
+  padding: 20px;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
 }
 
 body.light-mode .group-card {
-    background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .group-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 4px;
-    height: 100%;
-    background: var(--gradient);
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--gradient);
 }
 
 .group-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--cyan);
-    box-shadow: var(--shadow-hover);
+  transform: translateY(-4px);
+  border-color: var(--cyan);
+  box-shadow: var(--shadow-hover);
 }
 
 .group-name {
-    font-size: 17px;
-    font-weight: 700;
-    margin-bottom: 8px;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .group-count {
-    font-size: 13px;
-    color: var(--gray);
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  font-size: 13px;
+  color: var(--gray);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* ============================================
    لیست دانش‌آموزان
    ============================================ */
 .students-list {
-    display: grid;
-    gap: 12px;
-    margin-top: 16px;
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .student-row {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 14px 20px;
-    background: rgba(30, 41, 59, 0.5);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(6, 182, 212, 0.1);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.1);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
 body.light-mode .student-row {
-    background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .student-row:hover {
-    border-color: var(--cyan);
-    transform: translateX(-4px);
+  border-color: var(--cyan);
+  transform: translateX(-4px);
 }
 
 .avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    color: white;
-    font-size: 16px;
-    flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: white;
+  font-size: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .student-info {
-    flex: 1;
-    min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .student-name {
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 2px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
 }
 
 .student-group-name {
-    font-size: 12px;
-    color: var(--gray);
+  font-size: 12px;
+  color: var(--gray);
 }
 
 .student-score {
-    font-size: 18px;
-    font-weight: 700;
-    background: var(--gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    flex-shrink: 0;
+  font-size: 18px;
+  font-weight: 700;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex-shrink: 0;
 }
 
 /* ============================================
    مودال
    ============================================ */
 .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 20px;
-    animation: fadeIn 0.3s;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.3s;
 }
 
-    .modal-overlay.active {
-        display: flex;
-    }
+.modal-overlay.active {
+  display: flex;
+}
 
 .modal {
-    background: var(--dark-2);
-    border-radius: var(--radius);
-    padding: 28px;
-    max-width: 500px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    animation: slideUp 0.3s;
-    border: 1px solid rgba(6, 182, 212, 0.2);
+  background: var(--dark-2);
+  border-radius: var(--radius);
+  padding: 28px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s;
+  border: 1px solid rgba(6, 182, 212, 0.2);
 }
 
 .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .modal-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--light);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--light);
 }
 
 .modal-close {
-    background: none;
-    border: none;
-    color: var(--gray);
-    font-size: 24px;
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    transition: all 0.2s;
+  background: none;
+  border: none;
+  color: var(--gray);
+  font-size: 24px;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: all 0.2s;
 }
 
-    .modal-close:hover {
-        background: rgba(239, 68, 68, 0.1);
-        color: var(--danger);
-    }
+.modal-close:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
 
 /* ============================================
    فرم
    ============================================ */
 .form-group {
-    margin-bottom: 16px;
+  margin-bottom: 16px;
 }
 
 .form-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: var(--gray);
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--gray);
 }
 
 .form-input,
 .form-textarea,
 .form-select {
-    width: 100%;
-    padding: 12px 16px;
-    background: var(--dark);
-    border: 2px solid var(--dark-3);
-    border-radius: var(--radius-sm);
-    color: var(--light);
-    font-family: inherit;
-    font-size: 14px;
-    transition: all 0.3s;
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--dark);
+  border: 2px solid var(--dark-3);
+  border-radius: var(--radius-sm);
+  color: var(--light);
+  font-family: inherit;
+  font-size: 14px;
+  transition: all 0.3s;
 }
 
-    .form-input:focus,
-    .form-textarea:focus,
-    .form-select:focus {
-        outline: none;
-        border-color: var(--cyan);
-        box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
-    }
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
+}
 
 .form-textarea {
-    min-height: 80px;
-    resize: vertical;
+  min-height: 80px;
+  resize: vertical;
 }
 
 /* ============================================
-   پروفایل کاربر
+   پروفایل
    ============================================ */
 .profile-hero {
-    text-align: center;
-    padding: 32px 20px;
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(16, 185, 129, 0.1));
-    border-radius: var(--radius);
-    margin-bottom: 24px;
-    border: 1px solid rgba(6, 182, 212, 0.2);
+  text-align: center;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(16, 185, 129, 0.1));
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  border: 1px solid rgba(6, 182, 212, 0.2);
 }
 
 .profile-avatar {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 36px;
-    font-weight: 700;
-    color: white;
-    margin: 0 auto 16px;
-    box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 700;
+  color: white;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
 }
 
 .profile-name {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 8px;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .profile-group {
-    font-size: 14px;
-    color: var(--gray);
-    margin-bottom: 20px;
+  font-size: 14px;
+  color: var(--gray);
+  margin-bottom: 20px;
 }
 
 .total-score-big {
-    font-size: 48px;
-    font-weight: 800;
-    background: var(--gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1;
+  font-size: 48px;
+  font-weight: 800;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
 }
 
 .total-score-label {
-    font-size: 13px;
-    color: var(--gray);
-    margin-top: 6px;
+  font-size: 13px;
+  color: var(--gray);
+  margin-top: 6px;
 }
 
 /* ============================================
-   تاریخچه امتیازات
+   تاریخچه
    ============================================ */
 .history-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-    background: rgba(30, 41, 59, 0.4);
-    border-radius: var(--radius-sm);
-    margin-bottom: 10px;
-    border-right: 3px solid var(--emerald);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  border-right: 3px solid var(--emerald);
 }
 
 body.light-mode .history-item {
-    background: rgba(241, 245, 249, 0.8);
+  background: rgba(241, 245, 249, 0.8);
 }
 
 .history-item.negative {
-    border-right-color: var(--danger);
+  border-right-color: var(--danger);
 }
 
 .history-icon {
-    font-size: 22px;
-    flex-shrink: 0;
+  font-size: 22px;
+  flex-shrink: 0;
 }
 
 .history-content {
-    flex: 1;
-    min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .history-reason {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
 }
 
 .history-meta {
-    font-size: 12px;
-    color: var(--gray);
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--gray);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .history-amount {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--emerald);
-    flex-shrink: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--emerald);
+  flex-shrink: 0;
 }
 
-    .history-amount.negative {
-        color: var(--danger);
-    }
+.history-amount.negative {
+  color: var(--danger);
+}
 
 /* ============================================
-   Toast (اعلان)
+   Toast
    ============================================ */
 .toast {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%) translateY(100px);
-    background: var(--dark-2);
-    color: var(--light);
-    padding: 14px 24px;
-    border-radius: var(--radius-sm);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 600;
-    opacity: 0;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 2000;
-    border: 2px solid var(--cyan);
-    max-width: 90%;
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--dark-2);
+  color: var(--light);
+  padding: 14px 24px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2000;
+  border: 2px solid var(--cyan);
+  max-width: 90%;
 }
 
-    .toast.show {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 
-    .toast.success {
-        border-color: var(--emerald);
-    }
-
-    .toast.error {
-        border-color: var(--danger);
-    }
-
-    .toast.warning {
-        border-color: var(--warning);
-    }
+.toast.success { border-color: var(--emerald); }
+.toast.error { border-color: var(--danger); }
+.toast.warning { border-color: var(--warning); }
 
 /* ============================================
-   لودینگ
+   Loader
    ============================================ */
 .loader {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 .loader-lg {
-    width: 50px;
-    height: 50px;
-    border-width: 5px;
-    border-color: rgba(6, 182, 212, 0.2);
-    border-top-color: var(--cyan);
+  width: 50px;
+  height: 50px;
+  border-width: 5px;
+  border-color: rgba(6, 182, 212, 0.2);
+  border-top-color: var(--cyan);
 }
 
 .loading-screen {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 200px;
-    flex-direction: column;
-    gap: 16px;
-    color: var(--gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--gray);
 }
 
 /* ============================================
    حالت خالی
    ============================================ */
 .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--gray);
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray);
 }
 
 .empty-icon {
-    font-size: 48px;
-    margin-bottom: 12px;
-    opacity: 0.5;
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
 }
 
 /* ============================================
-   انیمیشن‌ها
+   انیمیشن
    ============================================ */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes pop {
-    0% {
-        transform: scale(0.8);
-        opacity: 0;
-    }
-
-    50% {
-        transform: scale(1.1);
-    }
-
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .pop-in {
-    animation: pop 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: pop 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-/* ============================================
-   ریسپانسیو
-   ============================================ */
-@media (max-width: 768px) {
-    .container {
-        padding: 12px;
-    }
-
-    .header {
-        padding: 12px 16px;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-        .header h1 {
-            font-size: 16px;
-        }
-
-    .header-sub {
-        font-size: 11px;
-    }
-
-    .logo-circle {
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
-    }
-
-    .card {
-        padding: 18px;
-    }
-
-    .leaderboard {
-        grid-template-columns: 1fr;
-    }
-
-    .groups-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .total-score-big {
-        font-size: 38px;
-    }
-
-    .modal {
-        padding: 20px;
-    }
-}
-
-/* ============================================
-   اسکرول‌بار سفارشی
-   ============================================ */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--dark);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--gradient);
-    border-radius: 4px;
-}
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: var(--gradient-2);
-    }
 
 /* ============================================
    تب‌ها
    ============================================ */
 .tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-    padding: 6px;
-    background: rgba(30, 41, 59, 0.5);
-    border-radius: var(--radius);
-    backdrop-filter: blur(20px);
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  padding: 6px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: var(--radius);
+  backdrop-filter: blur(20px);
 }
 
 body.light-mode .tabs {
-    background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .tab-btn {
-    padding: 10px 20px;
-    background: transparent;
-    border: none;
-    color: var(--gray);
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    border-radius: var(--radius-sm);
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  color: var(--gray);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-    .tab-btn:hover {
-        color: var(--light);
-        background: rgba(6, 182, 212, 0.1);
-    }
+.tab-btn:hover {
+  color: var(--light);
+  background: rgba(6, 182, 212, 0.1);
+}
 
-    .tab-btn.active {
-        background: var(--gradient);
-        color: white;
-        box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
-    }
+.tab-btn.active {
+  background: var(--gradient);
+  color: white;
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
+}
 
 .tab-content {
-    display: none;
-    animation: fadeIn 0.3s;
+  display: none;
+  animation: fadeIn 0.3s;
 }
 
-    .tab-content.active {
-        display: block;
-    }
+.tab-content.active {
+  display: block;
+}
 
 /* ============================================
    چک‌باکس سفارشی
    ============================================ */
 .attendance-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-    background: rgba(30, 41, 59, 0.4);
-    border-radius: var(--radius-sm);
-    margin-bottom: 8px;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
 body.light-mode .attendance-item {
-    background: rgba(241, 245, 249, 0.8);
+  background: rgba(241, 245, 249, 0.8);
 }
 
 .attendance-item:hover {
-    border-color: rgba(6, 182, 212, 0.4);
+  border-color: rgba(6, 182, 212, 0.4);
 }
 
 .attendance-item.selected {
-    background: rgba(6, 182, 212, 0.1);
-    border-color: var(--cyan);
+  background: rgba(6, 182, 212, 0.1);
+  border-color: var(--cyan);
 }
 
 .custom-checkbox {
-    width: 24px;
-    height: 24px;
-    border: 2px solid var(--dark-3);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s;
-    flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--dark-3);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  flex-shrink: 0;
 }
 
 .attendance-item.selected .custom-checkbox {
-    background: var(--emerald);
-    border-color: var(--emerald);
-    color: white;
+  background: var(--emerald);
+  border-color: var(--emerald);
+  color: white;
 }
 
-    .attendance-item.selected .custom-checkbox::after {
-        content: '✓';
-        font-weight: 700;
-        font-size: 14px;
-    }
+.attendance-item.selected .custom-checkbox::after {
+  content: '✓';
+  font-weight: 700;
+  font-size: 14px;
+}
 
 /* ============================================
-   گرید ۲ ستونه
+   گرید
    ============================================ */
 .grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 @media (max-width: 600px) {
-    .grid-2 {
-        grid-template-columns: 1fr;
-    }
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* ============================================
-   لینک
-   ============================================ */
 a {
-    color: var(--cyan);
-    text-decoration: none;
+  color: var(--cyan);
+  text-decoration: none;
 }
 
-    a:hover {
-        text-decoration: underline;
-    }
+a:hover {
+  text-decoration: underline;
+}
 
-/* ============================================
-   نتیجه سرچ
-   ============================================ */
 .search-result {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-    background: rgba(30, 41, 59, 0.4);
-    border-radius: var(--radius-sm);
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid transparent;
 }
 
-    .search-result:hover {
-        border-color: var(--cyan);
-        background: rgba(6, 182, 212, 0.1);
-    }
+.search-result:hover {
+  border-color: var(--cyan);
+  background: rgba(6, 182, 212, 0.1);
+}
 
-/* ============================================
-   کارت آماری
-   ============================================ */
 .stat-card {
-    padding: 20px;
-    background: rgba(30, 41, 59, 0.6);
-    border-radius: var(--radius);
-    border: 1px solid rgba(6, 182, 212, 0.2);
-    text-align: center;
-    transition: all 0.3s;
+  padding: 20px;
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: var(--radius);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  text-align: center;
+  transition: all 0.3s;
 }
 
-    .stat-card:hover {
-        transform: translateY(-4px);
-        border-color: var(--cyan);
-    }
+.stat-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--cyan);
+}
 
 .stat-icon {
-    font-size: 28px;
-    margin-bottom: 8px;
+  font-size: 28px;
+  margin-bottom: 8px;
 }
 
 .stat-value {
-    font-size: 28px;
-    font-weight: 800;
-    background: var(--gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  font-size: 28px;
+  font-weight: 800;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .stat-label {
-    font-size: 12px;
-    color: var(--gray);
-    margin-top: 4px;
+  font-size: 12px;
+  color: var(--gray);
+  margin-top: 4px;
 }
 
 .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
-/* ============================================
-   بج نقش
-   ============================================ */
 .role-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
-    .role-badge.super {
-        background: rgba(251, 191, 36, 0.15);
-        color: var(--gold);
-    }
+.role-badge.super {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--gold);
+}
 
-    .role-badge.admin {
-        background: rgba(6, 182, 212, 0.15);
-        color: var(--cyan);
-    }
+.role-badge.admin {
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--cyan);
+}
 
-/* ============================================
-   دکمه شناور
-   ============================================ */
 .fab {
-    position: fixed;
-    bottom: 30px;
-    left: 30px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: var(--gradient);
-    color: white;
-    border: none;
-    font-size: 28px;
-    cursor: pointer;
-    box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
-    transition: all 0.3s;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--gradient);
+  color: white;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
+  transition: all 0.3s;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-    .fab:hover {
-        transform: scale(1.1) rotate(90deg);
-        box-shadow: var(--shadow-hover);
-    }
+.fab:hover {
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: var(--shadow-hover);
+}
 
-/* ============================================
-   کارت نتیجه خالی
-   ============================================ */
 .no-result {
-    text-align: center;
-    padding: 30px;
-    color: var(--gray);
-    font-size: 14px;
+  text-align: center;
+  padding: 30px;
+  color: var(--gray);
+  font-size: 14px;
 }
 
+/* ============================================
+   اسکرول‌بار
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
 
+::-webkit-scrollbar-track {
+  background: var(--dark);
+}
 
+::-webkit-scrollbar-thumb {
+  background: var(--gradient);
+  border-radius: 4px;
+}
 
-
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gradient-2);
+}
 
 /* ============================================
-   🧠 کارت‌های هوشمند (Smart Analysis)
+   🧠 کارت‌های هوشمند
    ============================================ */
-
 .smart-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -1209,9 +1107,7 @@ body.light-mode .smart-card {
   position: relative;
 }
 
-.smart-card-icon {
-  font-size: 22px;
-}
+.smart-card-icon { font-size: 22px; }
 
 .smart-card-title {
   font-size: 14px;
@@ -1229,9 +1125,7 @@ body.light-mode .smart-card {
   border-radius: 10px;
 }
 
-.smart-card-body {
-  font-size: 13px;
-}
+.smart-card-body { font-size: 13px; }
 
 .smart-stat-big {
   font-size: 32px;
@@ -1281,9 +1175,6 @@ body.light-mode .smart-card {
   color: var(--danger);
 }
 
-/* ============================================
-   Streak Item
-   ============================================ */
 .streak-item {
   display: flex;
   align-items: center;
@@ -1292,9 +1183,7 @@ body.light-mode .smart-card {
   border-bottom: 1px solid rgba(6, 182, 212, 0.1);
 }
 
-.streak-item:last-child {
-  border-bottom: none;
-}
+.streak-item:last-child { border-bottom: none; }
 
 .streak-rank {
   width: 22px;
@@ -1326,9 +1215,6 @@ body.light-mode .smart-card {
   flex-shrink: 0;
 }
 
-/* ============================================
-   Alert Item
-   ============================================ */
 .alert-item {
   display: flex;
   align-items: flex-start;
@@ -1363,9 +1249,6 @@ body.light-mode .smart-card {
   font-style: italic;
 }
 
-/* ============================================
-   Suggestion Item
-   ============================================ */
 .suggestion-item {
   display: flex;
   align-items: flex-start;
@@ -1380,154 +1263,6 @@ body.light-mode .smart-card {
 }
 
 /* ============================================
-   ⌨️ کامند پالت (Ctrl+K)
-   ============================================ */
-.cmd-palette-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  display: none;
-  align-items: flex-start;
-  justify-content: center;
-  z-index: 9999;
-  padding: 80px 20px 20px;
-}
-
-.cmd-palette-overlay.active {
-  display: flex;
-  animation: fadeIn 0.2s;
-}
-
-.cmd-palette {
-  width: 100%;
-  max-width: 560px;
-  background: var(--dark-2);
-  border-radius: 16px;
-  border: 1px solid rgba(6, 182, 212, 0.3);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-  animation: slideUp 0.3s;
-}
-
-.cmd-palette-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 20px;
-  border-bottom: 1px solid rgba(6, 182, 212, 0.2);
-}
-
-.cmd-palette-input-wrap input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--light);
-  font-family: inherit;
-  font-size: 15px;
-}
-
-.cmd-palette-input-wrap input::placeholder {
-  color: var(--gray);
-}
-
-.cmd-hint {
-  font-size: 11px;
-  color: var(--gray);
-  padding: 4px 8px;
-  background: rgba(6, 182, 212, 0.1);
-  border-radius: 6px;
-}
-
-.cmd-results {
-  max-height: 400px;
-  overflow-y: auto;
-  padding: 8px;
-}
-
-.cmd-section-title {
-  font-size: 11px;
-  color: var(--gray);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 12px 12px 8px;
-  font-weight: 700;
-}
-
-.cmd-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.cmd-item:hover {
-  background: rgba(6, 182, 212, 0.15);
-}
-
-.cmd-item-icon {
-  font-size: 20px;
-  flex-shrink: 0;
-}
-
-.cmd-item-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--light);
-}
-
-.cmd-item-sub {
-  font-size: 11px;
-  color: var(--gray);
-  margin-top: 2px;
-}
-
-/* ============================================
-   درگ و دراپ Import
-   ============================================ */
-#dropZone {
-  user-select: none;
-}
-
-#dropZone:hover {
-  border-color: var(--cyan) !important;
-  background: rgba(6, 182, 212, 0.1) !important;
-}
-
-/* ============================================
-   ریسپانسیو برای کارت‌های هوشمند
-   ============================================ */
-@media (max-width: 640px) {
-  .smart-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .smart-stat-big {
-    font-size: 26px;
-  }
-
-  .cmd-palette-overlay {
-    padding: 40px 12px 12px;
-  }
-
-  .cmd-palette {
-    max-width: 100%;
-  }
-
-  .cmd-hint {
-    display: none;
-  }
-   }
-
-
-
-
-
-/* ============================================
    📊 نمودارها
    ============================================ */
 .charts-grid {
@@ -1537,9 +1272,7 @@ body.light-mode .smart-card {
   margin-bottom: 24px;
 }
 
-.chart-full {
-  grid-column: 1 / -1;
-}
+.chart-full { grid-column: 1 / -1; }
 
 .chart-card {
   background: rgba(30, 41, 59, 0.6);
@@ -1550,9 +1283,7 @@ body.light-mode .smart-card {
   transition: all 0.3s;
 }
 
-body.light-mode .chart-card {
-  background: rgba(255, 255, 255, 0.8);
-}
+body.light-mode .chart-card { background: rgba(255, 255, 255, 0.8); }
 
 .chart-card:hover {
   border-color: rgba(6, 182, 212, 0.4);
@@ -1580,9 +1311,7 @@ body.light-mode .chart-card {
   height: 250px;
 }
 
-.chart-full .chart-body {
-  height: 320px;
-}
+.chart-full .chart-body { height: 320px; }
 
 /* ============================================
    🏆 Leaderboard
@@ -1612,9 +1341,7 @@ body.light-mode .chart-card {
   border-radius: 10px;
 }
 
-body.light-mode .leaderboard-tabs {
-  background: rgba(241, 245, 249, 0.8);
-}
+body.light-mode .leaderboard-tabs { background: rgba(241, 245, 249, 0.8); }
 
 .lb-tab {
   padding: 8px 16px;
@@ -1629,9 +1356,7 @@ body.light-mode .leaderboard-tabs {
   transition: all 0.2s;
 }
 
-.lb-tab:hover {
-  color: var(--light);
-}
+.lb-tab:hover { color: var(--light); }
 
 .lb-tab.active {
   background: var(--gradient);
@@ -1639,10 +1364,7 @@ body.light-mode .leaderboard-tabs {
   box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
 }
 
-.leaderboard-list {
-  display: grid;
-  gap: 10px;
-}
+.leaderboard-list { display: grid; gap: 10px; }
 
 .lb-item {
   display: flex;
@@ -1656,9 +1378,7 @@ body.light-mode .leaderboard-tabs {
   cursor: pointer;
 }
 
-body.light-mode .lb-item {
-  background: rgba(241, 245, 249, 0.7);
-}
+body.light-mode .lb-item { background: rgba(241, 245, 249, 0.7); }
 
 .lb-item:hover {
   transform: translateX(-4px);
@@ -1692,10 +1412,7 @@ body.light-mode .lb-item {
   flex-shrink: 0;
 }
 
-.lb-info {
-  flex: 1;
-  min-width: 0;
-}
+.lb-info { flex: 1; min-width: 0; }
 
 .lb-name {
   font-size: 15px;
@@ -1707,10 +1424,7 @@ body.light-mode .lb-item {
   color: var(--light);
 }
 
-.lb-meta {
-  font-size: 11px;
-  color: var(--gray);
-}
+.lb-meta { font-size: 11px; color: var(--gray); }
 
 .lb-score {
   font-size: 20px;
@@ -1746,9 +1460,7 @@ body.light-mode .lb-item {
   text-align: right;
 }
 
-body.light-mode .export-btn {
-  background: rgba(241, 245, 249, 0.8);
-}
+body.light-mode .export-btn { background: rgba(241, 245, 249, 0.8); }
 
 .export-btn:hover {
   border-color: var(--cyan);
@@ -1756,10 +1468,7 @@ body.light-mode .export-btn {
   transform: translateY(-2px);
 }
 
-.export-icon {
-  font-size: 28px;
-  flex-shrink: 0;
-}
+.export-icon { font-size: 28px; flex-shrink: 0; }
 
 .export-title {
   font-size: 14px;
@@ -1773,44 +1482,7 @@ body.light-mode .export-btn {
 }
 
 /* ============================================
-   ریسپانسیو
-   ============================================ */
-@media (max-width: 640px) {
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .chart-full {
-    grid-column: auto;
-  }
-
-  .chart-body {
-    height: 220px;
-  }
-
-  .chart-full .chart-body {
-    height: 250px;
-  }
-
-  .leaderboard-tabs {
-    width: 100%;
-  }
-
-  .lb-tab {
-    flex: 1;
-    padding: 8px 10px;
-    font-size: 12px;
-  }
-
-  .lb-score {
-    font-size: 16px;
-  }
-}
-
-
-
-/* ============================================
-   🔔 سیستم اعلان‌ها
+   🔔 اعلان‌ها (اصلاح شده - fixed)
    ============================================ */
 .notif-bell-wrap {
   position: relative;
@@ -1865,18 +1537,18 @@ body.light-mode .export-btn {
 }
 
 .notif-panel {
-  position: absolute;
-  top: 55px;
-  left: 0;
-  width: 360px;
+  position: fixed;
+  top: 80px;
+  left: 20px;
+  width: 380px;
   max-height: 500px;
   background: var(--dark-2);
   border: 1px solid rgba(6, 182, 212, 0.3);
   border-radius: 16px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
   overflow: hidden;
   display: none;
-  z-index: 999;
+  z-index: 99999;
   flex-direction: column;
   animation: slideUp 0.2s;
 }
@@ -2020,9 +1692,7 @@ body.light-mode .badge-card {
   border-radius: 10px;
 }
 
-.badge-item .badge-icon {
-  font-size: 28px;
-}
+.badge-item .badge-icon { font-size: 28px; }
 
 .badge-item .badge-name {
   font-size: 11px;
@@ -2044,11 +1714,7 @@ body.light-mode .badge-card {
   font-weight: 700;
 }
 
-/* فید نشان‌ها */
-.badges-feed {
-  display: grid;
-  gap: 10px;
-}
+.badges-feed { display: grid; gap: 10px; }
 
 .badge-feed-item {
   display: flex;
@@ -2061,19 +1727,14 @@ body.light-mode .badge-card {
   transition: all 0.2s;
 }
 
-body.light-mode .badge-feed-item {
-  background: rgba(241, 245, 249, 0.8);
-}
+body.light-mode .badge-feed-item { background: rgba(241, 245, 249, 0.8); }
 
 .badge-feed-item:hover {
   transform: translateX(-4px);
   border-right-color: var(--cyan);
 }
 
-.badge-feed-content {
-  flex: 1;
-  min-width: 0;
-}
+.badge-feed-content { flex: 1; min-width: 0; }
 
 .badge-feed-name {
   font-size: 13px;
@@ -2096,9 +1757,7 @@ body.light-mode .badge-feed-item {
 /* ============================================
    ⚡ Auto-complete
    ============================================ */
-.autocomplete-wrap {
-  position: relative;
-}
+.autocomplete-wrap { position: relative; }
 
 .autocomplete-suggestions {
   position: absolute;
@@ -2116,9 +1775,7 @@ body.light-mode .badge-feed-item {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-.autocomplete-suggestions.active {
-  display: block;
-}
+.autocomplete-suggestions.active { display: block; }
 
 .autocomplete-item {
   padding: 10px 14px;
@@ -2129,9 +1786,7 @@ body.light-mode .badge-feed-item {
   border-bottom: 1px solid rgba(6, 182, 212, 0.05);
 }
 
-.autocomplete-item:last-child {
-  border-bottom: none;
-}
+.autocomplete-item:last-child { border-bottom: none; }
 
 .autocomplete-item:hover,
 .autocomplete-item.selected {
@@ -2149,31 +1804,181 @@ body.light-mode .badge-feed-item {
 }
 
 /* ============================================
+   Drop Zone
+   ============================================ */
+#dropZone { user-select: none; }
+
+#dropZone:hover {
+  border-color: var(--cyan) !important;
+  background: rgba(6, 182, 212, 0.1) !important;
+}
+
+#dropZone.dragover {
+  border-color: var(--cyan) !important;
+  background: rgba(6, 182, 212, 0.15) !important;
+  transform: scale(1.02);
+}
+
+/* ============================================
+   کامند پالت
+   ============================================ */
+.cmd-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 9999;
+  padding: 80px 20px 20px;
+}
+
+.cmd-palette-overlay.active {
+  display: flex;
+  animation: fadeIn 0.2s;
+}
+
+.cmd-palette {
+  width: 100%;
+  max-width: 560px;
+  background: var(--dark-2);
+  border-radius: 16px;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: slideUp 0.3s;
+}
+
+.cmd-palette-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.cmd-palette-input-wrap input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--light);
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.cmd-palette-input-wrap input::placeholder { color: var(--gray); }
+
+.cmd-hint {
+  font-size: 11px;
+  color: var(--gray);
+  padding: 4px 8px;
+  background: rgba(6, 182, 212, 0.1);
+  border-radius: 6px;
+}
+
+.cmd-results {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.cmd-section-title {
+  font-size: 11px;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 12px 12px 8px;
+  font-weight: 700;
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cmd-item:hover { background: rgba(6, 182, 212, 0.15); }
+
+.cmd-item-icon { font-size: 20px; flex-shrink: 0; }
+
+.cmd-item-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--light);
+}
+
+.cmd-item-sub {
+  font-size: 11px;
+  color: var(--gray);
+  margin-top: 2px;
+}
+
+/* ============================================
    ریسپانسیو
    ============================================ */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .container { padding: 12px; }
+
+  .header {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .header h1 { font-size: 16px; }
+  .header-sub { font-size: 11px; }
+
+  .logo-circle {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .card { padding: 18px; }
+  .leaderboard { grid-template-columns: 1fr; }
+  .groups-grid { grid-template-columns: 1fr; }
+  .total-score-big { font-size: 38px; }
+  .modal { padding: 20px; }
+
+  .smart-grid { grid-template-columns: 1fr; }
+  .smart-stat-big { font-size: 26px; }
+
+  .charts-grid { grid-template-columns: 1fr; }
+  .chart-full { grid-column: auto; }
+  .chart-body { height: 220px; }
+  .chart-full .chart-body { height: 250px; }
+
+  .leaderboard-tabs { width: 100%; }
+  .lb-tab {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .lb-score { font-size: 16px; }
+
+  .cmd-palette-overlay { padding: 40px 12px 12px; }
+  .cmd-palette { max-width: 100%; }
+  .cmd-hint { display: none; }
+
   .notif-panel {
     position: fixed;
-    top: 70px;
+    top: 80px;
     right: 12px;
     left: 12px;
     width: auto;
     max-height: 70vh;
+    z-index: 99999;
   }
 
   .badges-grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
-
-  .badge-icon-big {
-    font-size: 30px;
-  }
-
-  .badge-name-big {
-    font-size: 11px;
-  }
+  .badge-icon-big { font-size: 30px; }
+  .badge-name-big { font-size: 11px; }
 }
-
-
-
-
