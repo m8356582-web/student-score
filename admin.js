@@ -1,5 +1,5 @@
 /* ============================================
-   منطق پنل ادمین (admin.html) - نسخه امنیتی + هوشمند
+   منطق پنل ادمین (admin.html) - نسخه نهایی
    ============================================ */
 
 let currentAdmin = null;
@@ -106,9 +106,10 @@ async function onTabOpen(tabName) {
     renderStats();
     renderRecentScores();
     if (typeof renderSmartAnalysis === 'function') renderSmartAnalysis();
+    if (typeof renderCharts === 'function') renderCharts();
+    if (typeof renderLeaderboard === 'function') renderLeaderboard('all');
   }
   else if (tabName === 'import') {
-    // ناحیه Import از import.js مدیریت می‌شه
     if (typeof initImportZone === 'function') initImportZone();
   }
 }
@@ -171,6 +172,7 @@ function fillGroupSelects() {
    ============================================ */
 function renderStats() {
   const container = document.getElementById('statsGrid');
+  if (!container) return;
   const totalStudents = allStudentsCache.length;
   const totalGroups = allGroupsCache.length;
   const totalScores = allStudentsCache.reduce((sum, s) => sum + (s.total_score || 0), 0);
@@ -185,6 +187,7 @@ function renderStats() {
 
 async function renderRecentScores() {
   const container = document.getElementById('recentScores');
+  if (!container) return;
   container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
   try {
     const scores = await Scores.getRecent(10);
@@ -455,6 +458,7 @@ async function renderStudents() {
             <span>⭐ ${s.total_score || 0} امتیاز</span>
           </div>
         </div>
+        <button class="btn btn-ghost btn-small" onclick="exportStudentReport('${s.id}')" title="کارنامه">📄</button>
         <button class="btn btn-ghost btn-small" onclick="editStudent('${s.id}')">✏️</button>
         <button class="btn btn-danger btn-small" onclick="deleteStudent('${s.id}', '${s.full_name.replace(/'/g, "\\'")}')">🗑️</button>
       </div>
@@ -643,7 +647,8 @@ function deselectAllAttendance() {
 }
 
 function updateAttendanceCounter() {
-  document.getElementById('attCounter').textContent = `${selectedAttendance.size} نفر انتخاب شده`;
+  const counter = document.getElementById('attCounter');
+  if (counter) counter.textContent = `${selectedAttendance.size} نفر انتخاب شده`;
 }
 
 async function submitAttendance() {
@@ -668,6 +673,11 @@ async function submitAttendance() {
     }
 
     showToast(`✅ ${entries.length} نفر ثبت شدن (+۵۰ امتیاز)`, 'success');
+
+    // 🎉 Confetti
+    if (typeof quickConfetti === 'function' && entries.length >= 5) {
+      quickConfetti();
+    }
 
     selectedAttendance.clear();
     document.getElementById('attReason').value = '';
@@ -758,10 +768,16 @@ async function submitManualScore() {
 
   const reason = document.getElementById('manualReason').value.trim() || 'امتیاز متفرقه';
   const sessionTitle = document.getElementById('manualSession').value.trim();
+  const oldTotal = manualSelectedStudent.total_score || 0;
 
   try {
     const newTotal = await Scores.add(manualSelectedStudent.id, amount, reason, sessionTitle, 'manual');
     showToast(`✅ ${amount > 0 ? '+' : ''}${amount} امتیاز ثبت شد. جمع: ${newTotal}`, 'success');
+
+    // 🎉 چک امتیاز گِرد
+    if (typeof checkMilestone === 'function') {
+      checkMilestone(oldTotal, newTotal);
+    }
 
     document.getElementById('manualAmount').value = '';
     document.getElementById('manualReason').value = '';
@@ -1147,4 +1163,4 @@ async function renderAuditLog() {
     console.error(err);
     container.innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
   }
-                                          }
+     }
