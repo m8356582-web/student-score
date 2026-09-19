@@ -18,6 +18,13 @@
 
   <div class="container">
 
+    <!-- نشانگر آنلاین/آفلاین -->
+    <div class="online-indicator online" id="onlineIndicator" onclick="showQueuePreview()" title="وضعیت اتصال + صف آفلاین">
+      <span id="onlineIcon">🟢</span>
+      <span id="onlineText">آنلاین</span>
+      <span class="queue-badge" id="queueBadge" style="display:none;">0</span>
+    </div>
+
     <!-- هدر -->
     <header class="admin-header">
       <div class="admin-info">
@@ -34,6 +41,7 @@
           <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
         </button>
 
+        <button class="btn btn-icon" id="syncNowBtn" title="سینک صف آفلاین">🔄</button>
         <button class="btn btn-icon" id="themeToggle" title="تغییر تم">🌙</button>
         <a href="index.html" class="btn btn-ghost">🏠 صفحه اصلی</a>
         <button class="btn btn-danger" id="logoutBtn">🚪 خروج</button>
@@ -50,11 +58,12 @@
     </div>
 
     <!-- تب‌ها -->
-    <div class="tabs">
+    <div class="tabs" id="tabs">
       <button class="tab-btn active" data-tab="dashboard">📊 داشبورد</button>
       <button class="tab-btn" data-tab="groups">📁 گروه‌ها</button>
       <button class="tab-btn" data-tab="students">👥 دانش‌آموزان</button>
       <button class="tab-btn" data-tab="badges">🏅 نشان‌ها</button>
+      <button class="tab-btn" data-tab="users">👤 کاربران</button>
       <button class="tab-btn" data-tab="import">📥 ورودی اکسل</button>
       <button class="tab-btn" data-tab="attendance">✅ ثبت حضور</button>
       <button class="tab-btn" data-tab="manual">📝 امتیاز متفرقه</button>
@@ -119,13 +128,19 @@
         <p style="color:var(--gray);font-size:13px;margin-bottom:20px;">
           سیستم به‌طور خودکار به دانش‌آموزان بر اساس فعالیتشون نشان می‌ده
         </p>
-
         <h4 style="margin-bottom:12px;font-size:14px;color:var(--gray);">🏆 نشان‌های موجود:</h4>
         <div class="badges-grid" id="allBadgesGrid" style="margin-bottom:24px;"></div>
-
         <h4 style="margin-bottom:12px;font-size:14px;color:var(--gray);">👥 نشان‌های گرفته‌شده:</h4>
         <div id="awardedBadgesList"></div>
       </div>
+    </div>
+
+    <!-- کاربران 🆕 -->
+    <div class="tab-content" id="tab-users">
+      <div id="onlineUsersSection"></div>
+      <div id="visitStatsSection"></div>
+      <div id="sessionsSection"></div>
+      <div id="blockedIPsSection"></div>
     </div>
 
     <!-- ورودی اکسل -->
@@ -135,7 +150,6 @@
           <h3>📥 ورودی هوشمند اکسل</h3>
           <button class="btn btn-primary" onclick="downloadSampleFile()">⬇️ دانلود فایل نمونه</button>
         </div>
-
         <p style="color:var(--gray);font-size:13px;margin-bottom:20px;line-height:1.8;">
           🎯 <b>روش کار:</b><br>
           ۱. فایل نمونه رو دانلود کن<br>
@@ -144,7 +158,6 @@
           ۴. فایل رو ذخیره کن<br>
           ۵. اینجا آپلود کن
         </p>
-
         <div id="importZone">
           <div id="dropZone" style="border: 3px dashed rgba(6,182,212,0.4); border-radius: 16px; padding: 50px 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(6,182,212,0.05);">
             <div style="font-size: 64px; margin-bottom: 16px; opacity: 0.7;">📁</div>
@@ -157,7 +170,6 @@
           </div>
           <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;">
         </div>
-
         <div id="importPreview" style="display: none;"></div>
       </div>
     </div>
@@ -169,7 +181,6 @@
           <h3>✅ ثبت حضور (۵۰ امتیاز)</h3>
           <span class="counter-badge" id="attCounter">۰ نفر انتخاب شده</span>
         </div>
-
         <div class="action-bar">
           <select class="form-select" id="attGroup" onchange="renderAttendance()">
             <option value="">انتخاب گروه...</option>
@@ -178,9 +189,7 @@
           <button class="btn btn-ghost btn-small" onclick="selectAllAttendance()">همه</button>
           <button class="btn btn-ghost btn-small" onclick="deselectAllAttendance()">هیچ‌کدام</button>
         </div>
-
         <div class="attendance-list" id="attendanceList"></div>
-
         <div style="margin-top:20px;">
           <div class="form-group">
             <label class="form-label">📝 توضیحات / دلیل (اختیاری)</label>
@@ -197,20 +206,17 @@
     <div class="tab-content" id="tab-manual">
       <div class="section-card">
         <div class="section-header"><h3>📝 ثبت امتیاز متفرقه</h3></div>
-
         <div class="form-group" style="position:relative;">
           <label class="form-label">🔍 جستجوی دانش‌آموز</label>
           <input type="text" class="form-input" id="manualSearch" placeholder="اسم دانش‌آموز رو تایپ کن..." autocomplete="off">
           <div id="manualAutocomplete" class="autocomplete-dropdown"></div>
         </div>
-
         <div id="manualSelectedBox" style="display:none;margin-top:20px;">
           <div class="profile-hero" style="padding:20px;">
             <div class="profile-avatar" id="manualAvatar" style="width:60px;height:60px;font-size:24px;">؟</div>
             <div class="profile-name" style="font-size:18px;" id="manualName">-</div>
             <div class="profile-group" id="manualGroup">-</div>
           </div>
-
           <div class="grid-2">
             <div class="form-group">
               <label class="form-label">💯 مقدار امتیاز</label>
@@ -222,13 +228,11 @@
               <input type="text" class="form-input" id="manualSession" placeholder="مثلاً: مسابقه">
             </div>
           </div>
-
           <div class="form-group">
             <label class="form-label">📝 دلیل</label>
             <textarea class="form-textarea" id="manualReason" placeholder="مثلاً: پاسخ صحیح..."></textarea>
             <div id="reasonSuggestions"></div>
           </div>
-
           <button class="btn btn-primary" style="width:100%;" onclick="submitManualScore()">💾 ثبت امتیاز</button>
         </div>
       </div>
@@ -305,6 +309,9 @@
 
   <script src="supabase.js"></script>
   <script src="jalali-date.js"></script>
+  <script src="sessions.js"></script>
+  <script src="offline.js"></script>
+  <script src="auto-backup.js"></script>
   <script src="notifications.js"></script>
   <script src="badges.js"></script>
   <script src="autocomplete.js"></script>
@@ -326,4 +333,4 @@
     }
   </script>
 </body>
-</html>
+      </html>
