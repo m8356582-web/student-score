@@ -162,9 +162,10 @@
   </div>
 
   <script src="supabase.js"></script>
+  <script src="sessions.js"></script>
   <script>
     /* ============================================
-       ورود امن ادمین (با RPC + Token)
+       ورود امن ادمین + ثبت Session
        ============================================ */
 
     // اگه از قبل لاگین کرده، مستقیم بره پنل
@@ -175,6 +176,14 @@
     async function verifyExistingSession() {
       const valid = await Auth.verify();
       if (valid) {
+        // ثبت Session جدید
+        try {
+          const admin = Auth.get();
+          const token = Auth.getToken();
+          await registerUserSession(token, admin.id, 'admin', admin.full_name);
+        } catch (e) {
+          console.warn('خطا در ثبت Session:', e);
+        }
         window.location.href = 'admin.html';
       } else {
         Auth.clear();
@@ -200,6 +209,15 @@
 
         if (!result.success) {
           throw new Error(result.error || 'خطا در ورود');
+        }
+
+        // 🆕 ثبت Session
+        try {
+          const token = Auth.getToken();
+          await registerUserSession(token, result.admin.id, 'admin', result.admin.full_name);
+          console.log('✅ Session ثبت شد');
+        } catch (e) {
+          console.warn('خطا در ثبت Session:', e);
         }
 
         showToast(`خوش آمدی ${result.admin.full_name} 👋`, 'success');
