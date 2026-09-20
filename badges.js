@@ -254,3 +254,19 @@ async function renderStudentBadgesSummary(studentId) {
     </div>
   `;
 }
+
+
+
+
+/* ============================================
+   🌐 اتصال به Window
+   ============================================ */
+if (typeof window !== 'undefined') {
+  window.BADGES = BADGES;
+  window.getStudentBadges = getStudentBadges;
+  window.getAllBadgesForStudent = getAllBadgesForStudent;
+  window.checkAndAwardBadges = checkAndAwardBadges;
+  window.checkAllStudentsBadges = checkAllStudentsBadges;
+  window.renderBadgesHTML = renderBadgesHTML;
+  window.renderStudentBadgesSummary = renderStudentBadgesSummary;
+}
