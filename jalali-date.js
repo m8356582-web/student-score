@@ -311,3 +311,27 @@ function initJalaliInputs() {
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => initJalaliInputs(), 2000);
 });
+
+
+
+/* ============================================
+   🌐 اتصال به Window
+   ============================================ */
+if (typeof window !== 'undefined') {
+  window.JALALI_MONTHS = JALALI_MONTHS;
+  window.JALALI_WEEKDAYS = JALALI_WEEKDAYS;
+  window.gregorianToJalali = gregorianToJalali;
+  window.jalaliToGregorian = jalaliToGregorian;
+  window.getTodayJalali = getTodayJalali;
+  window.jalaliToISO = jalaliToISO;
+  window.isoToJalali = isoToJalali;
+  window.formatJalali = formatJalali;
+  window.formatISOToJalali = formatISOToJalali;
+  window.openJalaliPicker = openJalaliPicker;
+  window.closeJalaliPicker = closeJalaliPicker;
+  window.renderJalaliPicker = renderJalaliPicker;
+  window.getDaysInJalaliMonth = getDaysInJalaliMonth;
+  window.isLeapJalaliYear = isLeapJalaliYear;
+  window.toPersianDigits = toPersianDigits;
+  window.initJalaliInputs = initJalaliInputs;
+}
