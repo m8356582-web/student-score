@@ -9,6 +9,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
   await loadData();
   setupSearch();
+
+  // 🆕 ثبت بازدید
+  if (typeof registerPageVisit === 'function') {
+    setTimeout(() => registerPageVisit('index.html'), 1500);
+  }
 });
 
 /* ============================================
@@ -199,7 +204,7 @@ async function showProfile(studentId) {
       ? groups.map(g => g.name).join(' • ')
       : 'بدون گروه';
 
-    // گرفتن نشان‌ها (اگه badges.js لود شده)
+    // نشان‌ها
     let badgesHTML = '';
     if (typeof getAllBadgesForStudent === 'function') {
       try {
