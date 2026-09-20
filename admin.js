@@ -38,6 +38,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   setTimeout(() => initManualAutocomplete(), 1500);
+
+  // ثبت بازدید
+  if (typeof registerPageVisit === 'function') {
+    setTimeout(() => registerPageVisit('admin.html'), 2000);
+  }
 });
 
 /* ============================================
@@ -56,12 +61,12 @@ function initHeader() {
   }
   document.getElementById('logoutBtn').addEventListener('click', () => {
     if (confirm('از پنل خارج می‌شی؟')) {
+      if (typeof stopPinging === 'function') stopPinging();
       Auth.clear();
       window.location.href = 'login.html';
     }
   });
 
-  // 🆕 آپدیت پروفایل تو هدر
   if (typeof updateHeaderProfile === 'function') {
     setTimeout(() => updateHeaderProfile(), 500);
   }
@@ -109,8 +114,10 @@ async function onTabOpen(tabName) {
   else if (tabName === 'history') await renderHistory();
   else if (tabName === 'audit') await renderAuditLog();
   else if (tabName === 'badges') await renderBadgesTab();
+  else if (tabName === 'users') await renderUsersTab();
   else if (tabName === 'backup') {
-    if (typeof renderBackupTab === 'function') await renderBackupTab();
+    if (typeof renderAutoBackupTab === 'function') await renderAutoBackupTab();
+    else if (typeof renderBackupTab === 'function') await renderBackupTab();
   }
   else if (tabName === 'dashboard') {
     renderStats();
@@ -277,6 +284,15 @@ async function saveGroup() {
   const name = document.getElementById('groupNameInput').value.trim();
   const desc = document.getElementById('groupDescInput').value.trim();
   if (!name) { showToast('اسم گروه رو وارد کن', 'warning'); return; }
+
+  // اگه آفلاین بود
+  if (typeof isOnline !== 'undefined' && !isOnline) {
+    await createGroupOffline(name, desc);
+    showToast('📥 تو صف آفلاین ذخیره شد', 'warning');
+    closeModal();
+    return;
+  }
+
   try {
     await Groups.create(name, desc);
     showToast('گروه ساخته شد ✅', 'success');
@@ -508,6 +524,14 @@ async function saveStudent() {
   const groupIds = Array.from(document.querySelectorAll('.student-group-cb:checked')).map(cb => cb.value);
 
   if (!name) { showToast('اسم رو وارد کن', 'warning'); return; }
+
+  // اگه آفلاین بود
+  if (typeof isOnline !== 'undefined' && !isOnline) {
+    await createStudentOffline(name, phone, groupIds);
+    showToast('📥 تو صف آفلاین ذخیره شد', 'warning');
+    closeModal();
+    return;
+  }
 
   try {
     await Students.create(name, phone, groupIds);
@@ -757,8 +781,20 @@ async function submitAttendance() {
   const reason = document.getElementById('attReason').value.trim() || 'حضور در جلسه';
   const sessionTitle = document.getElementById('attSessionTitle').value.trim() || 'جلسه عمومی';
   const groupId = document.getElementById('attGroup').value;
+  const studentIds = Array.from(selectedAttendance);
 
-  const entries = Array.from(selectedAttendance).map(studentId => ({
+  // اگه آفلاین بود
+  if (typeof isOnline !== 'undefined' && !isOnline) {
+    await addBulkScoresOffline(studentIds, 50, reason, sessionTitle, groupId);
+    showToast(`📥 ${studentIds.length} نفر تو صف آفلاین ذخیره شدن`, 'warning');
+    selectedAttendance.clear();
+    document.getElementById('attReason').value = '';
+    document.getElementById('attSessionTitle').value = '';
+    await renderAttendance();
+    return;
+  }
+
+  const entries = studentIds.map(studentId => ({
     studentId, amount: 50, reason, sessionTitle
   }));
 
@@ -766,17 +802,15 @@ async function submitAttendance() {
     await Scores.addBulk(entries, 'attendance');
     const sessionResult = await Sessions.create(sessionTitle, new Date().toISOString().split('T')[0], groupId, reason);
     if (sessionResult.success) {
-      await AttendanceRecords.addBulk(sessionResult.id, Array.from(selectedAttendance));
+      await AttendanceRecords.addBulk(sessionResult.id, studentIds);
     }
 
-    // 🏅 بررسی نشان‌ها
-    for (const studentId of selectedAttendance) {
+    for (const studentId of studentIds) {
       if (typeof checkAndAwardBadges === 'function') {
         await checkAndAwardBadges(studentId);
       }
     }
 
-    // 🔔 اعلان
     if (typeof createNotification === 'function') {
       await createNotification(
         'attendance',
@@ -886,6 +920,19 @@ async function submitManualScore() {
   const reason = document.getElementById('manualReason').value.trim() || 'امتیاز متفرقه';
   const sessionTitle = document.getElementById('manualSession').value.trim();
   const oldTotal = manualSelectedStudent.total_score || 0;
+
+  // اگه آفلاین بود
+  if (typeof isOnline !== 'undefined' && !isOnline) {
+    await addScoreOffline(manualSelectedStudent.id, amount, reason, sessionTitle, 'manual');
+    showToast('📥 تو صف آفلاین ذخیره شد', 'warning');
+    document.getElementById('manualAmount').value = '';
+    document.getElementById('manualReason').value = '';
+    document.getElementById('manualSession').value = '';
+    document.getElementById('manualSearch').value = '';
+    document.getElementById('manualSelectedBox').style.display = 'none';
+    manualSelectedStudent = null;
+    return;
+  }
 
   try {
     const newTotal = await Scores.add(manualSelectedStudent.id, amount, reason, sessionTitle, 'manual');
@@ -998,6 +1045,14 @@ async function saveSession() {
   const notes = document.getElementById('sessionNotesInput').value.trim();
 
   if (!title) { showToast('عنوان رو وارد کن', 'warning'); return; }
+
+  // اگه آفلاین بود
+  if (typeof isOnline !== 'undefined' && !isOnline) {
+    await createSessionOffline(title, date, groupId, notes);
+    showToast('📥 تو صف آفلاین ذخیره شد', 'warning');
+    closeModal();
+    return;
+  }
 
   try {
     await Sessions.create(title, date, groupId, notes);
@@ -1280,7 +1335,7 @@ async function renderAuditLog() {
       'create_session': '📚', 'update_student': '✏️', 'update_group': '✏️',
       'update_session': '✏️', 'update_password': '🔒', 'add_to_group': '➕',
       'remove_from_group': '➖', 'set_groups': '🔀', 'delete': '🗑️',
-      'bulk_import': '📥', 'update_profile': '👤'
+      'bulk_import': '📥', 'update_profile': '👤', 'kill_session': '🚪'
     };
 
     container.innerHTML = logs.map(log => {
@@ -1301,5 +1356,294 @@ async function renderAuditLog() {
   } catch (err) {
     console.error(err);
     container.innerHTML = '<div class="no-result">خطا</div>';
+  }
+}
+
+/* ============================================
+   👤 تب کاربران
+   ============================================ */
+async function renderUsersTab() {
+  await Promise.all([
+    renderOnlineUsersSection(),
+    renderVisitStatsSection(),
+    renderSessionsSection(),
+    renderBlockedIPsSection()
+  ]);
+}
+
+async function renderOnlineUsersSection() {
+  const container = document.getElementById('onlineUsersSection');
+  if (!container) return;
+
+  container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
+
+  try {
+    const { online, count } = await fetchOnlineUsers();
+
+    container.innerHTML = `
+      <div class="section-card">
+        <div class="section-header">
+          <h3>🟢 کاربران آنلاین (${count} نفر)</h3>
+          <button class="btn btn-ghost btn-small" onclick="renderOnlineUsersSection()">🔄</button>
+        </div>
+
+        ${online.length === 0 ? `
+          <div class="no-result">الان کسی آنلاین نیست</div>
+        ` : `
+          <div class="online-users-list">
+            ${online.map(u => `
+              <div class="online-user-item">
+                <div class="online-user-dot"></div>
+                <div class="avatar" style="background:${u.user_type === 'admin' ? '#fbbf24' : '#06b6d4'};width:36px;height:36px;font-size:14px;">
+                  ${getInitial(u.user_name)}
+                </div>
+                <div class="online-user-info">
+                  <div class="online-user-name">${u.user_name || '؟'}</div>
+                  <div class="online-user-meta">
+                    ${u.user_type === 'admin' ? '👑 ادمین' : '👤 دانش‌آموز'}
+                    • ${u.device_info || 'نامشخص'}
+                  </div>
+                </div>
+                <div class="online-user-time">${formatDuration(u.seconds_ago)} پیش</div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+    `;
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
+  }
+}
+
+async function renderVisitStatsSection() {
+  const container = document.getElementById('visitStatsSection');
+  if (!container) return;
+
+  container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
+
+  try {
+    const token = Auth.getToken();
+    const { data, error } = await db.rpc('get_visit_stats', { p_token: token });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+
+    const stats = data.stats;
+    const topPages = data.top_pages || [];
+
+    container.innerHTML = `
+      <div class="section-card">
+        <div class="section-header">
+          <h3>📊 آمار بازدید</h3>
+          <button class="btn btn-ghost btn-small" onclick="renderVisitStatsSection()">🔄</button>
+        </div>
+
+        <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));">
+          <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value" style="font-size:22px;">${stats.today}</div>
+            <div class="stat-label">امروز</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⏮️</div>
+            <div class="stat-value" style="font-size:22px;">${stats.yesterday}</div>
+            <div class="stat-label">دیروز</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📆</div>
+            <div class="stat-value" style="font-size:22px;">${stats.week}</div>
+            <div class="stat-label">هفته</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🗓️</div>
+            <div class="stat-value" style="font-size:22px;">${stats.month}</div>
+            <div class="stat-label">ماه</div>
+          </div>
+          <div class="stat-card" style="border-color:var(--cyan);">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value" style="font-size:22px;">${stats.total}</div>
+            <div class="stat-label">کل</div>
+          </div>
+        </div>
+
+        ${topPages.length > 0 ? `
+          <h4 style="margin:20px 0 12px;font-size:14px;color:var(--gray);">🔝 صفحات پرطرفدار:</h4>
+          <div>
+            ${topPages.map(p => `
+              <div class="session-row">
+                <div class="session-info">
+                  <div class="session-title-text">${getPageName(p.page)}</div>
+                </div>
+                <span class="counter-badge">${p.count} بازدید</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = '<div class="no-result">خطا در بارگذاری آمار</div>';
+  }
+}
+
+function getPageName(page) {
+  const names = {
+    'index.html': '🏠 صفحه اصلی',
+    'login.html': '🔑 ورود ادمین',
+    'admin.html': '👑 پنل ادمین'
+  };
+  return names[page] || `📄 ${page}`;
+}
+
+async function renderSessionsSection() {
+  const container = document.getElementById('sessionsSection');
+  if (!container) return;
+
+  container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
+
+  try {
+    const sessions = await fetchActiveSessions();
+
+    container.innerHTML = `
+      <div class="section-card">
+        <div class="section-header">
+          <h3>💻 نشست‌های فعال (${sessions.length})</h3>
+          <button class="btn btn-ghost btn-small" onclick="renderSessionsSection()">🔄</button>
+        </div>
+
+        ${sessions.length === 0 ? `
+          <div class="no-result">هیچ نشستی ثبت نشده</div>
+        ` : `
+          <div class="sessions-list">
+            ${sessions.map(s => `
+              <div class="session-card ${s.is_active ? 'active' : 'inactive'}">
+                <div class="session-card-header">
+                  <div class="avatar" style="background:${s.user_type === 'admin' ? '#fbbf24' : '#06b6d4'};width:40px;height:40px;font-size:16px;">
+                    ${getInitial(s.user_name)}
+                  </div>
+                  <div style="flex:1;min-width:0;">
+                    <div class="session-user-name">
+                      ${s.user_name || '؟'}
+                      ${s.is_active ? '<span class="live-dot"></span>' : ''}
+                    </div>
+                    <div class="session-user-type">
+                      ${s.user_type === 'admin' ? '👑 ادمین' : '👤 دانش‌آموز'}
+                    </div>
+                  </div>
+                  <button class="btn btn-danger btn-small" onclick="handleKillSession('${s.id}')" title="خروج اجباری">🚪</button>
+                  ${s.ip_address ? `
+                    <button class="btn btn-ghost btn-small" onclick="handleBlockIP('${s.ip_address}', '${(s.user_name || '').replace(/'/g, "\\'")}')" title="بلاک IP">🚫</button>
+                  ` : ''}
+                </div>
+
+                <div class="session-card-info">
+                  <div class="session-info-row">
+                    <span>${getDeviceIcon(s.device_type)} ${s.device_type || 'نامشخص'}</span>
+                    <span>🌐 ${s.browser || '؟'} / ${s.os || '؟'}</span>
+                  </div>
+                  ${s.ip_address ? `
+                    <div class="session-info-row">
+                      <span>📍 IP: <code>${s.ip_address}</code></span>
+                      ${s.country ? `<span>🌍 ${s.country}${s.city ? ' / ' + s.city : ''}</span>` : ''}
+                    </div>
+                  ` : ''}
+                  <div class="session-info-row">
+                    <span>🕐 آخرین فعالیت: ${formatDuration(s.seconds_ago)} پیش</span>
+                    <span>⏱️ مدت: ${formatDuration(s.total_seconds)}</span>
+                  </div>
+                  <div class="session-info-row">
+                    <span style="font-size:11px;color:var(--gray);">📅 ورود: ${toJalaliFull(s.created_at)}</span>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+    `;
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = '<div class="no-result">خطا در بارگذاری نشست‌ها</div>';
+  }
+}
+
+async function renderBlockedIPsSection() {
+  const container = document.getElementById('blockedIPsSection');
+  if (!container) return;
+
+  container.innerHTML = '<div class="loading-screen"><div class="loader loader-lg"></div></div>';
+
+  try {
+    const { data, error } = await db
+      .from('blocked_ips')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    const blocked = data || [];
+
+    container.innerHTML = `
+      <div class="section-card">
+        <div class="section-header">
+          <h3>🚫 IP های بلاک شده (${blocked.length})</h3>
+          <button class="btn btn-ghost btn-small" onclick="renderBlockedIPsSection()">🔄</button>
+        </div>
+
+        ${blocked.length === 0 ? `
+          <div class="no-result">هیچ IP بلاک نشده ✅</div>
+        ` : `
+          <div>
+            ${blocked.map(b => `
+              <div class="session-row">
+                <div class="session-info">
+                  <div class="session-title-text">
+                    🚫 <code>${b.ip_address}</code>
+                  </div>
+                  <div class="session-meta">
+                    <span>👤 ${b.blocked_by_name || '؟'}</span>
+                    <span>📅 ${toJalaliFull(b.created_at)}</span>
+                    ${b.reason ? `<span>📝 ${b.reason}</span>` : ''}
+                  </div>
+                </div>
+                <button class="btn btn-success btn-small" onclick="handleUnblockIP('${b.ip_address}')">
+                  ✅ آنبلاک
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+    `;
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = '<div class="no-result">خطا در بارگذاری</div>';
+  }
+}
+
+async function handleKillSession(sessionId) {
+  const result = await killUserSession(sessionId);
+  if (result) {
+    renderSessionsSection();
+    renderOnlineUsersSection();
+  }
+}
+
+async function handleBlockIP(ip, userName = '') {
+  const reason = prompt(`دلیل بلاک IP "${ip}" (${userName}):`, 'دسترسی غیرمجاز');
+  if (reason === null) return;
+
+  const result = await blockUserIP(ip, reason);
+  if (result) {
+    renderSessionsSection();
+    renderBlockedIPsSection();
+  }
+}
+
+async function handleUnblockIP(ip) {
+  const result = await unblockUserIP(ip);
+  if (result) {
+    renderBlockedIPsSection();
   }
 }
