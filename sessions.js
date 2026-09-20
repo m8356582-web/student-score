@@ -305,3 +305,22 @@ function getDeviceIcon(deviceType) {
   if (deviceType === 'Tablet') return '📱';
   return '💻';
       }
+
+
+/* ============================================
+   🌐 اتصال به Window
+   ============================================ */
+if (typeof window !== 'undefined') {
+  window.detectDeviceInfo = detectDeviceInfo;
+  window.getUserIP = getUserIP;
+  window.getGeoFromIP = getGeoFromIP;
+  window.registerUserSession = registerUserSession;
+  window.registerPageVisit = registerPageVisit;
+  window.fetchActiveSessions = fetchActiveSessions;
+  window.fetchOnlineUsers = fetchOnlineUsers;
+  window.killUserSession = killUserSession;
+  window.blockUserIP = blockUserIP;
+  window.unblockUserIP = unblockUserIP;
+  window.formatDuration = formatDuration;
+  window.getDeviceIcon = getDeviceIcon;
+}
