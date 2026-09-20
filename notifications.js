@@ -75,7 +75,7 @@ function openNotificationPanel() {
   const isOpen = panel.classList.contains('active');
 
   if (isOpen) {
-    panel.classList.remove('active');
+    closeNotificationPanel();
     return;
   }
 
@@ -88,14 +88,22 @@ function openNotificationPanel() {
   }, 100);
 }
 
+/* ============================================
+   بستن پنل اعلان‌ها 🆕
+   ============================================ */
+function closeNotificationPanel() {
+  const panel = document.getElementById('notifPanel');
+  if (panel) panel.classList.remove('active');
+  document.removeEventListener('click', closeNotifOnClickOutside);
+}
+
 function closeNotifOnClickOutside(e) {
   const panel = document.getElementById('notifPanel');
   const btn = document.getElementById('notifBtn');
   if (!panel || !btn) return;
 
   if (!panel.contains(e.target) && !btn.contains(e.target)) {
-    panel.classList.remove('active');
-    document.removeEventListener('click', closeNotifOnClickOutside);
+    closeNotificationPanel();
   }
 }
 
@@ -191,8 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 1500);
 });
 
-
-
 /* ============================================
    🌐 اتصال به Window
    ============================================ */
@@ -202,6 +208,7 @@ if (typeof window !== 'undefined') {
   window.updateNotificationBadge = updateNotificationBadge;
   window.openNotificationPanel = openNotificationPanel;
   window.closeNotificationPanel = closeNotificationPanel;
+  window.closeNotifOnClickOutside = closeNotifOnClickOutside;
   window.renderNotifications = renderNotifications;
   window.markAsRead = markAsRead;
   window.markAllAsRead = markAllAsRead;
