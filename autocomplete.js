@@ -246,3 +246,18 @@ function renderReasonSuggestions(containerId, reasons, onSelect) {
     });
   });
 }
+
+
+
+/* ============================================
+   🌐 اتصال به Window
+   ============================================ */
+if (typeof window !== 'undefined') {
+  window.renderAutocompleteSuggestions = renderAutocompleteSuggestions;
+  window.highlightMatch = highlightMatch;
+  window.setupAutocomplete = setupAutocomplete;
+  window.getSuggestedAmounts = getSuggestedAmounts;
+  window.renderAmountSuggestions = renderAmountSuggestions;
+  window.getSuggestedReasons = getSuggestedReasons;
+  window.renderReasonSuggestions = renderReasonSuggestions;
+}
