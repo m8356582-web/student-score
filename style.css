@@ -2077,3 +2077,405 @@ body.light-mode .jalali-picker {
   }
 }
 
+
+
+/* ============================================
+   📴 نشانگر آنلاین/آفلاین
+   ============================================ */
+.online-indicator {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  z-index: 5000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.online-indicator.online {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10b981;
+}
+
+.online-indicator.offline {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  animation: pulse 2s infinite;
+}
+
+.online-indicator:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+.queue-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #f59e0b;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  margin-right: 4px;
+}
+
+/* ============================================
+   📥 صف آفلاین
+   ============================================ */
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+
+.queue-index {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.queue-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.queue-type {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.queue-time {
+  font-size: 11px;
+  color: var(--gray);
+}
+
+.queue-retry {
+  font-size: 11px;
+  color: var(--warning);
+  margin-top: 3px;
+}
+
+/* ============================================
+   👤 تب کاربران
+   ============================================ */
+.online-users-list {
+  display: grid;
+  gap: 8px;
+}
+
+.online-user-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--radius-sm);
+  transition: all 0.3s;
+}
+
+.online-user-item:hover {
+  border-color: var(--emerald);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.online-user-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--emerald);
+  box-shadow: 0 0 8px var(--emerald);
+  animation: pulse 2s infinite;
+  flex-shrink: 0;
+}
+
+.online-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.online-user-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.online-user-meta {
+  font-size: 11px;
+  color: var(--gray);
+}
+
+.online-user-time {
+  font-size: 11px;
+  color: var(--gray);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   💻 نشست‌های فعال
+   ============================================ */
+.sessions-list {
+  display: grid;
+  gap: 12px;
+}
+
+.session-card {
+  background: rgba(30, 41, 59, 0.5);
+  border: 2px solid rgba(6, 182, 212, 0.15);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: all 0.3s;
+}
+
+body.light-mode .session-card {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.session-card.active {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.session-card.inactive {
+  opacity: 0.6;
+}
+
+.session-card:hover {
+  border-color: var(--cyan);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.session-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.session-user-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-user-type {
+  font-size: 11px;
+  color: var(--gray);
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--emerald);
+  display: inline-block;
+  box-shadow: 0 0 8px var(--emerald);
+  animation: pulse 1.5s infinite;
+}
+
+.session-card-info {
+  display: grid;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(6, 182, 212, 0.1);
+}
+
+.session-info-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.session-info-row code {
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--cyan);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  direction: ltr;
+  font-size: 11px;
+}
+
+/* ============================================
+   💾 بکاپ خودکار
+   ============================================ */
+.backup-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  transition: all 0.3s;
+}
+
+.backup-status.active {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.backup-status.inactive {
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.backup-status-icon {
+  font-size: 40px;
+  flex-shrink: 0;
+}
+
+.backup-status-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.backup-status-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.backup-status-desc {
+  font-size: 12px;
+  color: var(--gray);
+  line-height: 1.6;
+}
+
+.backup-list {
+  display: grid;
+  gap: 8px;
+}
+
+.backup-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(6, 182, 212, 0.05);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  border-radius: var(--radius-sm);
+  transition: all 0.3s;
+}
+
+.backup-item:hover {
+  border-color: var(--cyan);
+  background: rgba(6, 182, 212, 0.1);
+}
+
+.backup-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.backup-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.backup-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.backup-badge {
+  background: var(--gradient);
+  color: white;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.backup-meta {
+  font-size: 11px;
+  color: var(--gray);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ============================================
+   🎯 Sync Progress
+   ============================================ */
+#syncProgressModal .modal {
+  border: 2px solid var(--cyan);
+}
+
+/* ============================================
+   ریسپانسیو
+   ============================================ */
+@media (max-width: 640px) {
+  .online-indicator {
+    top: 8px;
+    left: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .online-indicator .queue-badge {
+    min-width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+
+  .session-info-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .backup-status {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .backup-status-icon {
+    font-size: 32px;
+  }
+
+  .backup-item {
+    flex-wrap: wrap;
+  }
+
+  .backup-item .btn {
+    flex: 1;
+  }
+}
