@@ -538,3 +538,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('💾 سیستم بکاپ خودکار آماده');
   }, 3000);
 });
+
+
+
+/* ============================================
+   🌐 اتصال به Window
+   ============================================ */
+if (typeof window !== 'undefined') {
+  window.getBackupSettings = getBackupSettings;
+  window.saveBackupSettings = saveBackupSettings;
+  window.initBackupDB = initBackupDB;
+  window.saveBackupToDB = saveBackupToDB;
+  window.getAllBackups = getAllBackups;
+  window.getBackup = getBackup;
+  window.deleteBackup = deleteBackup;
+  window.clearAllBackups = clearAllBackups;
+  window.getBackupsStats = getBackupsStats;
+  window.createAutoBackup = createAutoBackup;
+  window.cleanupOldBackups = cleanupOldBackups;
+  window.scheduleAutoBackup = scheduleAutoBackup;
+  window.checkAndBackup = checkAndBackup;
+  window.downloadBackupFromDB = downloadBackupFromDB;
+  window.toggleAutoBackup = toggleAutoBackup;
+  window.setBackupTime = setBackupTime;
+  window.renderAutoBackupTab = renderAutoBackupTab;
+  window.removeBackup = removeBackup;
+  window.clearAllBackupsUI = clearAllBackupsUI;
+}
+
+
