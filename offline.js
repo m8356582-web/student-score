@@ -455,3 +455,30 @@ function clearQueue() {
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => initOfflineMode(), 800);
 });
+
+
+
+
+
+/* ============================================
+   🌐 اتصال به Window
+   ============================================ */
+if (typeof window !== 'undefined') {
+  window.initOfflineMode = initOfflineMode;
+  window.getOfflineQueue = getOfflineQueue;
+  window.setOfflineQueue = setOfflineQueue;
+  window.addToQueue = addToQueue;
+  window.syncOfflineQueue = syncOfflineQueue;
+  window.processQueueItem = processQueueItem;
+  window.showSyncProgress = showSyncProgress;
+  window.hideSyncProgress = hideSyncProgress;
+  window.addScoreOffline = addScoreOffline;
+  window.addBulkScoresOffline = addBulkScoresOffline;
+  window.createStudentOffline = createStudentOffline;
+  window.createGroupOffline = createGroupOffline;
+  window.createSessionOffline = createSessionOffline;
+  window.showQueuePreview = showQueuePreview;
+  window.removeFromQueue = removeFromQueue;
+  window.clearQueue = clearQueue;
+  window.getActionLabel = getActionLabel;
+}
