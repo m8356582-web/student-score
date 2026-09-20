@@ -641,3 +641,46 @@ function requireAdmin() {
   }
   return admin;
 }
+
+
+/* ============================================
+   🌐 اتصال به Window برای دسترسی عمومی
+   ============================================ */
+if (typeof window !== 'undefined') {
+  window.Auth = Auth;
+  window.Admins = Admins;
+  window.Groups = Groups;
+  window.Students = Students;
+  window.Scores = Scores;
+  window.Sessions = Sessions;
+  window.AttendanceRecords = AttendanceRecords;
+  window.AuditLog = AuditLog;
+  
+  window.showToast = showToast;
+  window.toJalali = toJalali;
+  window.toJalaliFull = toJalaliFull;
+  window.getInitial = getInitial;
+  window.showLoading = showLoading;
+  window.requireAdmin = requireAdmin;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
