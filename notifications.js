@@ -190,3 +190,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 1500);
 });
+
+
+
+/* ============================================
+   🌐 اتصال به Window
+   ============================================ */
+if (typeof window !== 'undefined') {
+  window.createNotification = createNotification;
+  window.loadNotifications = loadNotifications;
+  window.updateNotificationBadge = updateNotificationBadge;
+  window.openNotificationPanel = openNotificationPanel;
+  window.closeNotificationPanel = closeNotificationPanel;
+  window.renderNotifications = renderNotifications;
+  window.markAsRead = markAsRead;
+  window.markAllAsRead = markAllAsRead;
+  window.timeAgo = timeAgo;
+}
